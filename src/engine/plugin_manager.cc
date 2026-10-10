@@ -39,6 +39,9 @@
 #include <windows.h>
 #endif
 
+/** Plugin id from oemt/plugin/millennium.toml; the build ships it as plugins/club.oemt.core.star. */
+static constexpr const char* OEMT_BUNDLED_PLUGIN_ID = "club.oemt.core";
+
 plugin_manager::plugin_manager()
 {
 }
@@ -65,6 +68,14 @@ int plugin_manager::init()
             enabledPlugins = reset_enabled_plugins();
             break;
         }
+    }
+
+    /** OEmt.club: enable the bundled OEmt plugin once, on first run. Afterwards the user's choice
+     *  (including disabling it) is left alone. */
+    const nlohmann::json enabledOnce = CONFIG.get({ "oemt", "bundledPluginEnabledOnce" }, false);
+    if (!(enabledOnce.is_boolean() && enabledOnce.get<bool>())) {
+        set_plugin_enabled(OEMT_BUNDLED_PLUGIN_ID, true);
+        CONFIG.set({ "oemt", "bundledPluginEnabledOnce" }, true);
     }
     return 0;
 }

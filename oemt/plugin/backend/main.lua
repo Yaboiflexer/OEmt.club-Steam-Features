@@ -57,8 +57,9 @@ OEMT_APP = app_ok and app_or_err or nil
 OEMT_BOOT_ERROR = (not app_ok) and tostring(app_or_err) or nil
 if not app_ok then logger:error("[OEmt] boot failed: " .. OEMT_BOOT_ERROR) end
 
--- exposes the global ---@ffi functions. Not named "ffi": LuaJIT reserves that module name for its
--- built-in FFI library, so require("ffi") would never load our file.
+-- exposes the global ---@ffi functions. Not named "ffi": that is LuaJIT's built-in FFI library. Under
+-- plain LuaJIT require("ffi") returns the built-in; inside Millennium a packed ffi.lua would replace
+-- package.preload.ffi for the whole plugin process. A distinct name avoids both.
 require("oemt_ffi")
 
 local function on_load()

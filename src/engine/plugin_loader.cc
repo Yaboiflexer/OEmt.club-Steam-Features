@@ -189,11 +189,14 @@ void plugin_loader::init()
     m_backend_initializer = std::make_shared<backend_initializer>(m_plugin_manager, m_backend_manager, m_backend_event_dispatcher);
 
     m_plugin_webkit_store = std::make_shared<plugin_webkit_store>(m_plugin_manager);
+
+    /** OEmt.club: validate the enabled list (and apply the first-run enable of the bundled OEmt
+     *  plugin) before reading it, so OEmt loads on the very first launch rather than the second. */
+    m_plugin_manager->init();
+
     m_plugin_ptr = std::make_shared<std::vector<plugin_manager::plugin_t>>(m_plugin_manager->get_all_plugins());
     m_enabledPluginsPtr = std::make_shared<std::vector<plugin_manager::plugin_t>>(m_plugin_manager->get_enabled_backends());
     register_packed_plugin_resources(*m_plugin_ptr);
-
-    m_plugin_manager->init();
 
     /** setup steam hooks once backends have loaded */
     m_backend_event_dispatcher->on_all_backends_ready(platform::wait_for_backend_load);

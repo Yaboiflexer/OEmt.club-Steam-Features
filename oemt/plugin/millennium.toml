@@ -1,0 +1,19 @@
+[plugin]
+id = "club.oemt.core"
+name = "OEmt.club"
+version = "0.1.0"
+author = "OEmt.club"
+description = "OEmt gaming environment: library, sessions, integrations and diagnostics inside Steam"
+
+[backend]
+entry = "backend/main.lua"
+sources = ["backend/**/*.lua"]
+
+[frontend]
+entry = "frontend/index.tsx"
+
+[assets]
+resources = ["resources/**/*"]
+
+# Packed by oemt/scripts/build-plugin.ps1 with `starlight pack --of <dir>`; the CLI flag decides
+# where the .star goes, so no output_path is set here.

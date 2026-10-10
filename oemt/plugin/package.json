@@ -1,0 +1,13 @@
+{
+  "name": "oemt-plugin",
+  "private": true,
+  "version": "0.1.0",
+  "description": "OEmt.club plugin (Lua backend + React frontend), packed into a .star by starlight",
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@types/react": "19.1.1",
+    "typescript": "5.8.3"
+  }
+}
