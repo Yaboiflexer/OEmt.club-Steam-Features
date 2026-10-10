@@ -203,14 +203,11 @@ T.test("presence shows the newest running game with its start time", function()
     T.truthy(st.discord.connected); T.truthy(st.discord.showing)
     local a = last_activity(srv)
     T.eq(a.details, "Rust"); T.eq(a.state, "via OEmt.club"); T.eq(a.timestamps.start, 200)
-    T.eq(a.buttons[1].label, "View on Steam"); T.eq(a.buttons[1].url, "https://store.steampowered.com/app/252490")
-    local vals = { ["integrations.discord.enabled"] = true, ["integrations.discord.client_id"] = APP_ID, ["integrations.discord.store_button"] = false }
+    T.eq(a.buttons[1].label, "Join OEmt.club"); T.eq(a.buttons[1].url, "https://discord.gg/OEmt")
+    local vals = { ["integrations.discord.enabled"] = true, ["integrations.discord.client_id"] = APP_ID, ["integrations.discord.invite_button"] = false }
     local l2, srv2 = live(vals, { games = { { appid = "730", name = "CS2", started_at = 1 } } })
     l2:tick()
     T.eq(last_activity(srv2).buttons, nil, "button off")
-    local l3, srv3 = live(ON, { games = { { appid = "0", name = "Shortcut", started_at = 1 } } })
-    l3:tick()
-    T.eq(last_activity(srv3).buttons, nil, "no store page for non-Steam games")
 end)
 
 T.test("no game: no presence unless 'In Steam' is on; music only when allowed", function()

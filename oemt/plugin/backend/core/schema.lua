@@ -48,7 +48,7 @@ M.fields = {
                                            label = "Discord Application ID (from discord.com/developers; public, not a secret)", group = "integrations" },
     ["integrations.discord.idle_presence"] = { type = "bool", default = false, label = "Discord: show \"In Steam\" when no game is running", group = "integrations" },
     ["integrations.discord.show_music"] = { type = "bool", default = false, label = "Discord: show the song you are listening to", group = "integrations" },
-    ["integrations.discord.store_button"] = { type = "bool", default = true, label = "Discord: add a \"View on Steam\" button for the game", group = "integrations" },
+    ["integrations.discord.invite_button"] = { type = "bool", default = true, label = "Discord: add a \"Join OEmt.club\" button (discord.gg/OEmt)", group = "integrations" },
     ["integrations.spotify.enabled"]    = { type = "bool", default = false, label = "Spotify", group = "integrations" },
     ["integrations.soundcloud.enabled"] = { type = "bool", default = false, label = "SoundCloud", group = "integrations" },
     ["integrations.insights.enabled"]   = { type = "bool", default = false, label = "Insights.gg", group = "integrations" },
@@ -67,6 +67,7 @@ M.migrations = {
 -- Settings that earlier versions had and this one dropped; they are deleted from the store on load.
 M.removed = {
     ["integrations.tcno.enabled"] = true,       -- TcNo integration removed
+    ["integrations.discord.store_button"] = true, -- replaced by integrations.discord.invite_button
     ["accounts.ttl_avatar_min"] = true,         -- account cache moved to the separate Accounts build
     ["accounts.ttl_profile_min"] = true,
     ["accounts.ttl_status_min"] = true,
