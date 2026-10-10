@@ -23,4 +23,7 @@ declare const backend: {
 	OEmtCheckIp(reason: string, appid: string): FfiResult;
 	OEmtClearIpLog(): FfiResult;
 	OEmtFrontendLog(level: string, event: string, message: string): FfiResult;
+	OEmtIntegrationTick(): FfiResult;
+	OEmtMediaControl(action: string): FfiResult;
+	OEmtDiscordTest(): FfiResult;
 };

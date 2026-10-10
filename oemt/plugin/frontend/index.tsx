@@ -6,6 +6,8 @@ import { definePlugin, Navigation, Router, routerHook, useParams } from 'millenn
 import { api } from './api';
 import { startLifetimeTracking } from './games';
 import { startIpLogging } from './iplog';
+import * as live from './liveStore';
+import { NowPlayingCard } from './views/NowPlaying';
 import { getCurrentTab, getIntegration, openPath, requestTab, setIntegration, setPathNavigator, subscribeNav } from './nav';
 import { DEFAULT_TAB, OEMT_ROUTE, OEMT_ROUTE_PATTERN, resolveRoute, routeToPath, startTarget } from './routes';
 import { createSteamWin, PopupManagerLike, WindowRouterLike } from './steamwin';
@@ -101,6 +103,7 @@ const QuickPanel: FC = () => {
 					{o.data ? <Pill tone={o.data.health}>{o.data.health}</Pill> : o.error ? <Pill tone="fail">backend offline</Pill> : <Pill>checking</Pill>}
 					{o.data && <span className="oemt-muted">{o.data.active_sessions.length ? `Playing ${o.data.active_sessions[0].name ?? o.data.active_sessions[0].appid}` : `${o.data.library?.apps ?? 0} games`}</span>}
 				</div>
+				<NowPlayingCard visible compact />
 				<button className="oemt-btn oemt-primary" onClick={() => openTab(o.data?.settings.default_tab ?? DEFAULT_TAB)}>Open OEmt.club</button>
 			</div>
 		</div>
@@ -126,6 +129,9 @@ export default definePlugin(() => {
 
 	// Opt-in own-IP log: startup check, timed checks, and a check when a game starts (no-op when off).
 	const stopIpLogging = startIpLogging();
+
+	// Live integrations (Discord Rich Presence, now playing): slow background tick; views speed it up.
+	live.start();
 
 	// OEmt items in Steam's own top bar (ui.topbar_items), with a fallback strip.
 	const topbar = startTopbar(
@@ -183,6 +189,7 @@ export default definePlugin(() => {
 		onDismount() {
 			stopTracking();
 			stopIpLogging();
+			live.stop();
 			topbar.stop();
 			routerHook.removeRoute(OEMT_ROUTE_PATTERN);
 			try {

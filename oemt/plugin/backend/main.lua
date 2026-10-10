@@ -1,5 +1,11 @@
 -- OEmt.club — Millennium plugin entry point.
 -- Wires the real Millennium/Steam services into the OEmt app and exposes the FFI surface.
+
+-- Run interpreted, not JIT-compiled: the bundled LuaJIT build crashes intermittently with the JIT on
+-- (reproduced with the test suite: crashes with the JIT on, 0 in 40 runs with -joff). OEmt's backend
+-- does little work, so the interpreter is plenty fast. oemt/tests/lua/run.lua does the same.
+if jit then jit.off(); jit.flush() end
+
 local logger     = require("logger")
 local millennium = require("millennium")
 local fs         = require("fs")
@@ -31,6 +37,8 @@ local function production_services()
         http_get = function(url, opts) return http.get(url, opts) end,
         -- utils.exec runs `cmd /c <command>` hidden (CREATE_NO_WINDOW) and waits; callers detach with "start".
         exec = function(cmd) return utils.exec(cmd) end,
+        -- Windows calls through LuaJIT's FFI: Discord's local pipe, music window titles, media keys.
+        win32 = require("core.win32"),
         read_file = util.read_file,
         exists = function(p) return fs.exists(p) end,
         mkdirs = function(p) return fs.create_directories(p) end,

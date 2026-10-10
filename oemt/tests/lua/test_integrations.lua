@@ -12,20 +12,23 @@ local function ctx()
 end
 
 T.test("detects installed apps from standard locations only", function()
-    local present = { ["C:/Users/zy/AppData/Local/DiscordPTB/Update.exe"] = true, ["C:/Program Files/TcNo Account Switcher/TcNo-Acc-Switcher.exe"] = true }
+    local present = { ["C:/Users/zy/AppData/Local/DiscordPTB/Update.exe"] = true }
     local mod = integ.module({ getenv = getenv, exists = function(p) return present[p] == true end, platform = S.windows() })
     local c = ctx()
     local by = {}
     for _, i in ipairs(mod.list(c)) do by[i.id] = i end
     T.eq(by.discord.detection.status, "detected"); T.eq(by.discord.detection.variant, "PTB")
-    T.eq(by.tcno.detection.status, "detected")
     T.eq(by.spotify.detection.status, "not_installed")
     T.eq(by.soundcloud.detection.status, "not_detectable")
     T.falsy(by.discord.enabled, "integrations are opt-in")
 end)
 
--- Only capabilities that are actually implemented may say "available". (TcNo account switching moved to a separate build.)
-local IMPLEMENTED = {}
+-- Only capabilities that are actually implemented may say "available".
+local IMPLEMENTED = {
+    ["discord.rich_presence"] = true, ["discord.activity_privacy"] = true,
+    ["spotify.now_playing"] = true, ["spotify.playback_control"] = true,
+    ["soundcloud.now_playing"] = true, ["soundcloud.playback_control"] = true,
+}
 
 T.test("only implemented capabilities claim to be available", function()
     for _, def in ipairs(integ.DEFINITIONS) do

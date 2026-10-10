@@ -1,7 +1,6 @@
--- Integration descriptors and install detection.
--- Phase 1 is deliberately honest: OEmt only DETECTS whether an application is installed and records the
--- user's opt-in. No integration talks to an external service yet; every capability is listed with its
--- real support status so the UI never shows a control that does nothing.
+-- Integration descriptors and install detection. Every capability is listed with its real support
+-- status so the UI never shows a control that does nothing. The live parts (Discord Rich Presence,
+-- now playing, media keys) are in modules/integrations_live.lua; all of them are opt-in.
 local util = require("core.util")
 
 local M = {}
@@ -16,8 +15,9 @@ M.DEFINITIONS = {
             { env = "LOCALAPPDATA", path = "DiscordCanary/Update.exe", variant = "Canary" },
         },
         capabilities = {
-            { id = "rich_presence", label = "Rich Presence via Discord's local RPC (Game SDK / IPC pipe)", status = "planned" },
-            { id = "activity_privacy", label = "Per-game visibility controls", status = "planned" },
+            { id = "rich_presence", label = "Rich Presence: the game you are playing and for how long, via Discord's local connection", status = "available",
+              note = "Needs a Discord Application ID in Settings (create a free app at discord.com/developers)." },
+            { id = "activity_privacy", label = "Choose what shows: game, \"In Steam\" when idle, the song you are listening to", status = "available" },
             { id = "server_data", label = "Reading private server data", status = "unsupported",
               note = "Requires a bot added to the server with explicit permissions; never via the user's client." },
         },
@@ -27,10 +27,11 @@ M.DEFINITIONS = {
         detect = {
             { env = "APPDATA", path = "Spotify/Spotify.exe", variant = "Desktop installer" },
         },
-        detect_note = "Microsoft Store installs live under WindowsApps and are not detected in Phase 1.",
+        detect_note = "Microsoft Store installs live under WindowsApps and are not detected; now playing still works.",
         capabilities = {
-            { id = "now_playing", label = "Now playing (Spotify Web API, OAuth PKCE)", status = "planned" },
-            { id = "playback_control", label = "Play/pause/skip (Web API; requires Spotify Premium)", status = "planned" },
+            { id = "now_playing", label = "Now playing, read from the Spotify window (no login, no API key)", status = "available" },
+            { id = "playback_control", label = "Play/pause, next, previous (Windows media keys; no Premium needed)", status = "available",
+              note = "Media keys go to whichever app Windows treats as the active player." },
         },
     },
     {
@@ -38,23 +39,9 @@ M.DEFINITIONS = {
         detect = {},
         detect_note = "SoundCloud has no desktop app; integration would be web-based.",
         capabilities = {
-            { id = "now_playing", label = "Now playing", status = "planned",
-              note = "SoundCloud's public API registration is restricted; feasibility must be confirmed before building." },
-            { id = "playback_control", label = "Playback control", status = "planned",
-              note = "Only possible for playback OEmt hosts itself (e.g. the Media Hub widget)." },
-        },
-    },
-    {
-        id = "tcno", name = "TcNo Account Switcher", phase = 2,
-        detect = {
-            -- default from TcNo's NSIS script: $PROGRAMFILES64\TcNo Account Switcher
-            { env = "ProgramFiles", path = "TcNo Account Switcher/TcNo-Acc-Switcher.exe", variant = "Default install" },
-        },
-        detect_note = "Custom install folders are not detected yet; Phase 2 adds a manual path setting.",
-        capabilities = {
-            { id = "list_accounts", label = "List the accounts Steam remembers (read from Steam's loginusers.vdf)", status = "planned" },
-            { id = "switch_steam", label = "Switch Steam account (TcNo +s:<SteamID64>[:status])", status = "planned" },
-            { id = "switch_and_launch", label = "Switch then launch a game (OEmt launches it after Steam restarts)", status = "planned" },
+            { id = "now_playing", label = "Now playing, read from the SoundCloud browser tab", status = "available",
+              note = "Windows only sees the selected tab of each browser window, so keep SoundCloud's tab selected." },
+            { id = "playback_control", label = "Play/pause, next, previous (Windows media keys)", status = "available" },
         },
     },
     {
@@ -123,7 +110,7 @@ function M.module(deps)
         local list = mod.list(ctx)
         local detected = 0
         for _, i in ipairs(list) do if i.detection.installed then detected = detected + 1 end end
-        return { status = "ok", detail = string.format("%d of %d detected (detection only in Phase 1)", detected, #list) }
+        return { status = "ok", detail = string.format("%d of %d detected", detected, #list) }
     end
 
     return mod

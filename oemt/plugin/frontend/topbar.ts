@@ -14,6 +14,82 @@ const NAV_ITEM = '._7AlhCx3XGzBeIrQaCneUD';
 const NAV_ITEM_ACTIVE = '_1gqEjB5QsKT_NftD1dEsdZ';
 const NAV_LABEL = '._19axKcqYRuaJ8vdYKYmtTQ';
 const CONTAINER_ID = 'oemt-topbar-items';
+const STYLE_ID = 'oemt-topbar-style';
+// The bar that holds the row (SpaceTheme centres it) and Steam's menu on the left (Steam, View, Friends, …).
+const NAV_BAR = '._3Z3ohQ8-1NKnCZkbS6fvy';
+const LEFT_MENU = '._1Ky59qmywxOUtNcI1cgmkX';
+
+// Even spacing for every top-bar item (Steam's and OEmt's), sized to the window: --oemt-nav-pad and
+// --oemt-nav-font are set by fitRow(). Labels never wrap, and the back/forward arrows are hidden.
+const ROW_CSS = `
+${NAV_ROW} ${NAV_ITEM} { padding-left: var(--oemt-nav-pad, 10px) !important; padding-right: var(--oemt-nav-pad, 10px) !important; margin-left: 0 !important; margin-right: 0 !important; white-space: nowrap; }
+${NAV_ROW} ${NAV_LABEL} { white-space: nowrap; font-size: var(--oemt-nav-font, 13px); letter-spacing: 0.02em; }
+${NAV_ROW} svg { display: none !important; }
+`;
+
+function ensureStyle(doc: Document) {
+	if (doc.getElementById(STYLE_ID)) return;
+	const s = doc.createElement('style');
+	s.id = STYLE_ID;
+	s.textContent = ROW_CSS;
+	doc.head.append(s);
+}
+
+/** Undo ensureStyle/fitRow (items turned off or plugin stopped). */
+function unfit(doc: Document) {
+	doc.getElementById(STYLE_ID)?.remove();
+	const bar = doc.querySelector<HTMLElement>(NAV_BAR);
+	bar?.style.removeProperty('left');
+	bar?.style.removeProperty('transform');
+	bar?.style.removeProperty('--oemt-nav-pad');
+	bar?.style.removeProperty('--oemt-nav-font');
+}
+
+/** Spacing limits (px per side of each item) and the room kept free around the row. */
+const PAD_MAX = 14;
+const PAD_MIN = 3;
+const EDGE_GAP = 16;
+const WINDOW_BUTTONS = 150; // minimise / maximise / close on the right
+/** Below this width SpaceTheme moves the row onto its own line under the title bar. */
+const TWO_LINE_WIDTH = 1188;
+
+/**
+ * Dynamic spacing: the widest gap (PAD_MAX down to PAD_MIN, then slightly smaller text) at which the row
+ * fits between Steam's left-hand menu and the window buttons. The row stays centred when that leaves
+ * room; otherwise it starts just after the menu.
+ */
+function fitRow(doc: Document, row: Element) {
+	const bar = doc.querySelector<HTMLElement>(NAV_BAR);
+	const win = doc.defaultView;
+	if (!bar || !win) return;
+	bar.style.removeProperty('left');
+	bar.style.removeProperty('transform');
+	const width = win.innerWidth;
+	const twoLine = width <= TWO_LINE_WIDTH;
+	const menu = doc.querySelector<HTMLElement>(LEFT_MENU);
+	const leftLimit = twoLine ? EDGE_GAP : (menu ? menu.getBoundingClientRect().right : 0) + EDGE_GAP;
+	const rightLimit = width - (twoLine ? EDGE_GAP : WINDOW_BUTTONS);
+	const room = rightLimit - leftLimit;
+
+	bar.style.setProperty('--oemt-nav-font', '13px');
+	let pad = PAD_MAX;
+	for (; pad > PAD_MIN; pad--) {
+		bar.style.setProperty('--oemt-nav-pad', `${pad}px`);
+		if (row.getBoundingClientRect().width <= room) break;
+	}
+	bar.style.setProperty('--oemt-nav-pad', `${pad}px`);
+	if (row.getBoundingClientRect().width > room) bar.style.setProperty('--oemt-nav-font', '12px');
+	if (twoLine) return; // SpaceTheme centres the row on its own line
+
+	const w = row.getBoundingClientRect().width;
+	let left = width / 2 - w / 2;
+	if (left < leftLimit) left = leftLimit;
+	if (left + w > rightLimit) left = Math.max(leftLimit, rightLimit - w);
+	if (Math.abs(left - (width / 2 - w / 2)) > 1) {
+		bar.style.left = `${Math.round(left)}px`;
+		bar.style.transform = 'translateY(-50%)';
+	}
+}
 
 // The item list, defaults and legacy-id mapping live in routes.ts (unit-tested).
 export { DEFAULT_TOPBAR, parseTopbar, TOPBAR_CHOICES } from './routes';
@@ -172,10 +248,11 @@ export function startTopbar(getItems: () => Promise<TopbarItem[]>, deps: TopbarD
 		}
 		if (items.length === 0) {
 			doc.getElementById(CONTAINER_ID)?.remove();
+			unfit(doc);
 			setTopbarActive(false);
 			return report('off', 'no_items');
 		}
-		const key = `${items.map((i) => i.id).join()}|${getCurrentTab() ?? ''}|${currentPath(doc)}|${!!doc.getElementById(CONTAINER_ID)}`;
+		const key = `${items.map((i) => i.id).join()}|${getCurrentTab() ?? ''}|${currentPath(doc)}|${!!doc.getElementById(CONTAINER_ID)}|${doc.defaultView?.innerWidth ?? 0}`;
 		if (key === lastKey) return;
 		// The theme-class lookup is cheap and runs every tick, so items appear as soon as Steam draws its bar.
 		const structural = Date.now() >= retryAt;
@@ -187,7 +264,9 @@ export function startTopbar(getItems: () => Promise<TopbarItem[]>, deps: TopbarD
 			return report('fallback', 'no_nav_row');
 		}
 		lastKey = key;
+		if (found.method === 'theme_classes') ensureStyle(doc);
 		render(doc, found, deps);
+		if (found.method === 'theme_classes') fitRow(doc, found.row);
 		setTopbarActive(true, items.map((i) => i.id));
 		report('injected', 'ok', found.method);
 	};
@@ -218,7 +297,9 @@ export function startTopbar(getItems: () => Promise<TopbarItem[]>, deps: TopbarD
 			refreshFn = () => undefined;
 			clearInterval(interval);
 			unsub();
-			deps.mainDocument()?.getElementById(CONTAINER_ID)?.remove();
+			const doc = deps.mainDocument();
+			doc?.getElementById(CONTAINER_ID)?.remove();
+			if (doc) unfit(doc);
 			setTopbarActive(false);
 		},
 	};

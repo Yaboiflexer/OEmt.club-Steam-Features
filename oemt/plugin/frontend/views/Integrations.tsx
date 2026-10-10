@@ -1,79 +1,194 @@
-import { FC, useState } from 'react';
-import { api, CapabilityStatus, Integration } from '../api';
-import { Empty, ErrorText, Panel, Pill, useAsync } from '../ui';
+// Integrations: Discord Rich Presence, Spotify and SoundCloud now playing with media controls, and
+// install detection. Every integration is off until turned on here; settings save as you change them.
+import { FC, ReactNode, useEffect, useState } from 'react';
+import { api, CapabilityStatus, Integration, MediaAction } from '../api';
+import * as live from '../liveStore';
+import { useTabActive } from '../shell';
+import { Empty, ErrorText, Pill, useAsync } from '../ui';
 
 const CAP_TONE: Record<CapabilityStatus, 'pass' | 'accent' | 'fail'> = { available: 'pass', planned: 'accent', unsupported: 'fail' };
-
-function detectionTone(i: Integration) {
-	if (i.detection.installed) return 'pass' as const;
-	if (i.detection.status === 'error') return 'fail' as const;
-	return 'neutral' as const;
-}
-
 const DETECTION_LABEL: Record<string, string> = {
-	detected: 'Installed',
-	not_installed: 'Not installed',
-	not_detectable: 'Not detectable',
-	unsupported_platform: 'Unsupported OS',
-	error: 'Detection error',
+	detected: 'Installed', not_installed: 'Not installed', not_detectable: 'Web app', unsupported_platform: 'Unsupported OS', error: 'Detection error',
 };
 
-export const IntegrationsView: FC = () => {
-	const list = useAsync(() => api.integrations(false));
-	const [busy, setBusy] = useState<string>();
-	const [error, setError] = useState<unknown>();
+const Toggle: FC<{ checked: boolean; disabled?: boolean; onChange: (v: boolean) => void; children: ReactNode; title?: string }> = ({ checked, disabled, onChange, children, title }) => (
+	<label className="oemt-row" style={{ cursor: disabled ? 'default' : 'pointer' }} title={title}>
+		<input type="checkbox" className="oemt-switch" checked={checked} disabled={disabled} onChange={(e) => onChange(e.target.checked)} />
+		<span>{children}</span>
+	</label>
+);
 
-	async function toggle(i: Integration, enabled: boolean) {
-		setBusy(i.id);
+const Capabilities: FC<{ i: Integration }> = ({ i }) => (
+	<details className="oemt-caps">
+		<summary className="oemt-muted oemt-small">What it does</summary>
+		{i.capabilities.map((c) => (
+			<div key={c.id} style={{ padding: '4px 0' }}>
+				<div className="oemt-row"><Pill tone={CAP_TONE[c.status]}>{c.status}</Pill><span className="oemt-small">{c.label}</span></div>
+				{c.note && <div className="oemt-muted oemt-small" style={{ marginTop: 2 }}>{c.note}</div>}
+			</div>
+		))}
+	</details>
+);
+
+const Card: FC<{ i: Integration; children?: ReactNode; status?: ReactNode }> = ({ i, children, status }) => (
+	<section className="oemt-panel oemt-integration">
+		<div className="oemt-row" style={{ marginBottom: 10 }}>
+			<h3 className="oemt-int-title">{i.name}</h3>
+			<Pill tone={i.detection.installed ? 'pass' : 'neutral'} title={i.detection.detail}>{DETECTION_LABEL[i.detection.status] ?? i.detection.status}</Pill>
+			<div className="oemt-spacer" />
+			{status}
+		</div>
+		<div className="oemt-stack" style={{ gap: 10 }}>{children}</div>
+		<Capabilities i={i} />
+	</section>
+);
+
+export const IntegrationsView: FC = () => {
+	const visible = useTabActive();
+	const list = useAsync(() => api.integrations(false));
+	const settings = useAsync(() => api.settings());
+	const { status, error: liveError } = live.useLive(visible);
+	const [error, setError] = useState<unknown>();
+	const [busy, setBusy] = useState(false);
+	const [appId, setAppId] = useState('');
+	const [testNote, setTestNote] = useState<string>();
+
+	const v = settings.data?.values ?? {};
+	useEffect(() => setAppId(String(v['integrations.discord.client_id'] ?? '')), [settings.data]); // eslint-disable-line react-hooks/exhaustive-deps
+
+	async function save(key: string, value: unknown) {
 		setError(undefined);
+		setBusy(true);
 		try {
-			await api.setSetting(`integrations.${i.id}.enabled`, enabled);
-			list.reload();
+			await api.setSetting(key, value);
+			settings.reload();
+			if (key.endsWith('.enabled')) list.reload();
+			await live.refresh();
 		} catch (err) {
 			setError(err);
 		} finally {
-			setBusy(undefined);
+			setBusy(false);
 		}
+	}
+
+	async function saveAppId() {
+		const clean = appId.replace(/\s+/g, '');
+		setAppId(clean);
+		if (clean === String(v['integrations.discord.client_id'] ?? '')) return;
+		if (clean && !/^\d{17,20}$/.test(clean)) return setError(new Error('A Discord Application ID is 17 to 20 digits (copy it from the app\'s General Information page).'));
+		await save('integrations.discord.client_id', clean);
+	}
+
+	async function test() {
+		setTestNote(undefined);
+		setError(undefined);
+		try {
+			await live.discordTest();
+			setTestNote('Check your Discord profile: it shows "OEmt.club · Rich Presence is working" for 15 seconds.');
+		} catch (err) {
+			setError(err);
+		}
+	}
+
+	const press = (a: MediaAction) => live.media(a).catch(setError);
+	const on = (id: string) => v[`integrations.${id}.enabled`] === true;
+	const byId = new Map((list.data ?? []).map((i) => [i.id, i]));
+	const d = status?.discord;
+	const np = status?.now_playing;
+
+	const controls = (
+		<div className="oemt-row" role="group" aria-label="Media controls" style={{ gap: 4 }}>
+			<button className="oemt-btn oemt-icon-btn" onClick={() => press('previous')} aria-label="Previous track">⏮</button>
+			<button className="oemt-btn oemt-icon-btn oemt-primary" onClick={() => press('play_pause')} aria-label="Play or pause">⏯</button>
+			<button className="oemt-btn oemt-icon-btn" onClick={() => press('next')} aria-label="Next track">⏭</button>
+		</div>
+	);
+	const nowPlayingFor = (source: 'spotify' | 'soundcloud') => (
+		<div className="oemt-row">
+			<div className="oemt-np-text">
+				{np?.source === source ? (
+					<><strong className="oemt-np-title">{np.title}</strong>{np.artist && <span className="oemt-muted oemt-np-artist">{np.artist}</span>}</>
+				) : (
+					<span className="oemt-muted">{source === 'spotify' ? 'Nothing playing in Spotify (or paused)' : 'No SoundCloud tab playing (keep its tab selected)'}</span>
+				)}
+			</div>
+			<div className="oemt-spacer" />
+			{controls}
+		</div>
+	);
+
+	if (!list.data || !settings.data) {
+		return list.error || settings.error ? <ErrorText error={list.error ?? settings.error} /> : <Empty>Loading integrations…</Empty>;
 	}
 
 	return (
 		<div className="oemt-stack">
-			<div className="oemt-panel oemt-banner">
-				Phase 1 only <strong>detects</strong> these apps and records whether you opt in. Nothing connects to Discord, Spotify or any other
-				service yet, and OEmt never stores passwords or tokens.
-			</div>
 			{error ? <ErrorText error={error} /> : null}
-			{list.error ? <ErrorText error={list.error} /> : null}
+			{liveError && <div className="oemt-panel oemt-banner oemt-small">Live status unavailable: {liveError}</div>}
+			{status && !status.available && <div className="oemt-panel oemt-banner oemt-small">Live integrations need Windows; only detection works here.</div>}
+
+			<div className="oemt-grid oemt-int-grid">
+				{byId.get('discord') && (
+					<Card i={byId.get('discord')!} status={on('discord') && d && (
+						<Pill tone={d.connected ? 'pass' : d.configured ? 'warn' : 'neutral'} title={d.error}>
+							{d.connected ? (d.showing ? 'Showing on Discord' : 'Connected') : d.configured ? 'Not connected' : 'Needs App ID'}
+						</Pill>
+					)}>
+						<Toggle checked={on('discord')} disabled={busy} onChange={(x) => save('integrations.discord.enabled', x)}>Show my game on Discord (Rich Presence)</Toggle>
+						<label className="oemt-stack" style={{ gap: 4 }}>
+							<span className="oemt-small oemt-muted">Discord Application ID</span>
+							<div className="oemt-row">
+								<input className="oemt-input" style={{ flex: 1 }} inputMode="numeric" placeholder="e.g. 1234567890123456789" value={appId} maxLength={24}
+									onChange={(e) => setAppId(e.target.value)} onBlur={saveAppId} onKeyDown={(e) => e.key === 'Enter' && saveAppId()} />
+								<button className="oemt-btn" onClick={test} disabled={!on('discord') || !d?.configured}>Test</button>
+							</div>
+							<span className="oemt-muted oemt-small">
+								Create a free app named "OEmt.club" at discord.com/developers › Applications › New Application, then copy its Application ID.
+								The ID is public; no token or login is used. Your status then reads "Playing OEmt.club".
+							</span>
+						</label>
+						<Toggle checked={v['integrations.discord.idle_presence'] === true} disabled={busy || !on('discord')} onChange={(x) => save('integrations.discord.idle_presence', x)}>
+							Show "In Steam" when no game is running
+						</Toggle>
+						<Toggle checked={v['integrations.discord.show_music'] === true} disabled={busy || !on('discord')} onChange={(x) => save('integrations.discord.show_music', x)}>
+							Show the song I'm listening to
+						</Toggle>
+						{on('discord') && d?.error && <div className="oemt-small" style={{ color: 'var(--oemt-warn)' }}>{d.error}</div>}
+						{testNote && <div className="oemt-small oemt-muted">{testNote}</div>}
+					</Card>
+				)}
+
+				{byId.get('spotify') && (
+					<Card i={byId.get('spotify')!}>
+						<Toggle checked={on('spotify')} disabled={busy} onChange={(x) => save('integrations.spotify.enabled', x)}>Now playing and controls for Spotify</Toggle>
+						{on('spotify') && nowPlayingFor('spotify')}
+						<span className="oemt-muted oemt-small">Reads the song from the Spotify window title. No login, works on Free and Premium.</span>
+					</Card>
+				)}
+
+				{byId.get('soundcloud') && (
+					<Card i={byId.get('soundcloud')!}>
+						<Toggle checked={on('soundcloud')} disabled={busy} onChange={(x) => save('integrations.soundcloud.enabled', x)}>Now playing and controls for SoundCloud</Toggle>
+						{on('soundcloud') && nowPlayingFor('soundcloud')}
+						<span className="oemt-muted oemt-small">Reads the playing track from your browser's SoundCloud tab (Chrome, Edge, Firefox, Brave, Opera, Vivaldi).</span>
+					</Card>
+				)}
+
+				{(list.data ?? []).filter((i) => !['discord', 'spotify', 'soundcloud'].includes(i.id)).map((i) => (
+					<Card key={i.id} i={i}>
+						<span className="oemt-muted oemt-small">Coming in a later phase.</span>
+					</Card>
+				))}
+			</div>
+
 			<div className="oemt-row">
+				<span className="oemt-muted oemt-small">
+					Everything here is off until you turn it on, runs on this PC, and never asks for passwords or tokens. Media buttons press your
+					keyboard's media keys, so they control whichever app Windows treats as the active player.
+				</span>
 				<div className="oemt-spacer" />
 				<button className="oemt-btn" onClick={() => api.integrations(true).then(list.reload, setError)}>Detect again</button>
 			</div>
-			{!list.data ? (
-				<Empty>Checking installed apps…</Empty>
-			) : (
-				<div className="oemt-grid">
-					{list.data.map((i) => (
-						<Panel key={i.id} label={i.name} right={<Pill tone={detectionTone(i)}>{DETECTION_LABEL[i.detection.status] ?? i.detection.status}</Pill>}>
-							{i.detection.detail && <div className="oemt-muted" style={{ marginBottom: 10 }}>{i.detection.detail}</div>}
-							{i.capabilities.map((c) => (
-								<div key={c.id} style={{ padding: '4px 0' }}>
-									<div className="oemt-row">
-										<Pill tone={CAP_TONE[c.status]}>{c.status}</Pill>
-										<span>{c.label}</span>
-									</div>
-									{c.note && <div className="oemt-muted oemt-small" style={{ marginLeft: 4, marginTop: 2 }}>{c.note}</div>}
-								</div>
-							))}
-							<label className="oemt-row" style={{ marginTop: 12, cursor: 'pointer' }}
-								title={`Records that you want the ${i.name} integration when it ships (Phase ${i.phase}). Nothing is enabled now.`}>
-								<input type="checkbox" className="oemt-switch" checked={i.enabled} disabled={busy === i.id}
-									onChange={(e) => toggle(i, e.target.checked)} />
-								<span>Opt in for Phase {i.phase}</span>
-							</label>
-						</Panel>
-					))}
-				</div>
-			)}
 		</div>
 	);
 };

@@ -28,6 +28,16 @@ export interface Integration {
 	capabilities: { id: string; label: string; status: CapabilityStatus; note?: string }[];
 }
 
+export interface NowPlaying { source: 'spotify' | 'soundcloud'; artist?: string; title: string }
+export type MediaAction = 'play_pause' | 'next' | 'previous';
+/** Live state from backend/modules/integrations_live.lua. */
+export interface LiveStatus {
+	available: boolean;
+	discord: { enabled: boolean; configured: boolean; connected: boolean; error?: string; retry_at?: number; showing: boolean };
+	now_playing?: NowPlaying;
+	music_enabled: boolean;
+}
+
 export type SettingType = 'bool' | 'int' | 'enum' | 'color' | 'string';
 export interface SettingField {
 	key: string; type: SettingType; default: unknown; min?: number; max?: number;
@@ -102,6 +112,9 @@ export const api = {
 		return { ...s, active: arr(s.active), history: arr(s.history) };
 	},
 	clearSessions: () => call<boolean>('clear_sessions', backend.OEmtClearSessions()),
+	integrationTick: () => call<LiveStatus>('integration_tick', backend.OEmtIntegrationTick()),
+	mediaControl: (action: MediaAction) => call<boolean>('media_control', backend.OEmtMediaControl(action)),
+	discordTest: () => call<LiveStatus>('discord_test', backend.OEmtDiscordTest()),
 	async integrations(refresh = false): Promise<Integration[]> {
 		const list = arr<Integration>(await call<unknown>('integrations', backend.OEmtGetIntegrations(refresh)));
 		return list.map((i) => ({ ...i, capabilities: arr(i.capabilities) }));

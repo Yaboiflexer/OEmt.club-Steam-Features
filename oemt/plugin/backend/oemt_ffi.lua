@@ -98,3 +98,16 @@ function OEmtClearIpLog() return call("ip_clear") end
 ---@param message string
 ---@return table
 function OEmtFrontendLog(level, event, message) return call("frontend_log", level, event, message) end
+
+---@ffi
+---@return table
+function OEmtIntegrationTick() return call("integration_tick") end
+
+---@ffi
+---@param action string
+---@return table
+function OEmtMediaControl(action) return call("media_control", action) end
+
+---@ffi
+---@return table
+function OEmtDiscordTest() return call("discord_test") end

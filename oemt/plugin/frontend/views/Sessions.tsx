@@ -7,6 +7,7 @@ import { onGameEvent } from '../games';
 import { onIpLogChanged, scheduleIpChecks } from '../iplog';
 import { useShell, useTabActive } from '../shell';
 import { ConfirmButton, Empty, ErrorText, fmtDuration, fmtTime, Panel, Pill, Stat, useAsync } from '../ui';
+import { NowPlayingCard } from './NowPlaying';
 
 const STATUS_TONE = { running: 'pass', ended: 'neutral', interrupted: 'warn' } as const;
 const REASON_LABEL: Record<string, string> = { startup: 'Steam started', auto: 'Timed check', manual: 'Checked by you', session_start: 'Game started' };
@@ -90,6 +91,7 @@ export const SessionsView: FC = () => {
 
 	return (
 		<div className="oemt-stack">
+			<NowPlayingCard visible={visible} onOpenIntegrations={() => shell.go('integrations')} />
 			{data.error ? <ErrorText error={data.error} /> : null}
 			{error ? <ErrorText error={error} /> : null}
 			{data.data && !data.data.enabled && (

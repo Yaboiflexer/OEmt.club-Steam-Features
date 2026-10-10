@@ -2,6 +2,9 @@
 --   luajit oemt/tests/lua/run.lua            -- run all tests
 --   luajit oemt/tests/lua/run.lua config     -- run test files whose name contains "config"
 -- Exit code is non-zero when any test fails.
+
+-- Same as the plugin (backend/main.lua): the bundled LuaJIT build crashes intermittently with the JIT on.
+if jit then jit.off(); jit.flush() end
 local script_dir = (arg and arg[0] or ""):match("^(.*)[/\\]") or "."
 local root = script_dir .. "/../.."
 package.path = table.concat({
@@ -63,7 +66,7 @@ end
 
 local files = {
     "test_jsonlite", "test_redact", "test_vdf", "test_schema_config", "test_log", "test_events_registry",
-    "test_capabilities", "test_steam_library", "test_sessions", "test_integrations", "test_ip_log", "test_app",
+    "test_capabilities", "test_steam_library", "test_sessions", "test_integrations", "test_integrations_live", "test_ip_log", "test_app",
 }
 
 local filter = arg and arg[1]

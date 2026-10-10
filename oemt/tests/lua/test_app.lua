@@ -212,3 +212,33 @@ T.test("boot survives an unwritable data folder", function()
     T.truthy(st.passed < st.total, "self-test reports the problem")
 end)
 
+
+T.test("live integrations: tick, media keys and Discord test through the API", function()
+    local pressed = {}
+    local win32 = {
+        available = true, pid = function() return 1 end, sleep = function() end,
+        pipe_open = function() return nil end, -- Discord not running
+        window_titles = function() return { { exe = "spotify.exe", title = "Artist - Song" } } end,
+        media_key = function(a) pressed[#pressed + 1] = a return true end,
+    }
+    local app = boot({ win32 = win32 })
+    local st = ok_data(app.api.integration_tick(), "tick")
+    T.eq(st.now_playing, nil, "nothing read while Spotify is off")
+    T.falsy(app.api.media_control("play_pause").ok, "media keys need a music integration")
+
+    ok_data(app.api.set_setting("integrations.spotify.enabled", true), "enable spotify")
+    st = ok_data(app.api.integration_tick(), "tick")
+    T.eq(st.now_playing.title, "Song"); T.eq(st.now_playing.source, "spotify")
+    ok_data(app.api.media_control("next"), "next")
+    T.eq(pressed[1], "next")
+    T.falsy(app.api.media_control("explode").ok)
+
+    T.falsy(app.api.set_setting("integrations.discord.client_id", "12ab").ok, "digits only")
+    ok_data(app.api.set_setting("integrations.discord.client_id", "123456789012345678"), "app id")
+    ok_data(app.api.set_setting("integrations.discord.enabled", true), "enable discord")
+    local bad = app.api.discord_test()
+    T.eq(bad.ok, false); T.contains(bad.error, "not running")
+    st = ok_data(app.api.integration_tick(), "tick")
+    T.falsy(st.discord.connected); T.truthy(st.discord.configured)
+    App.shutdown(app)
+end)

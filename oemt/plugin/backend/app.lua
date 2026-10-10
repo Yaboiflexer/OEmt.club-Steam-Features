@@ -11,6 +11,7 @@ local json         = require("core.jsonlite")
 local library_mod  = require("modules.steam_library")
 local Sessions     = require("modules.sessions")
 local integrations = require("modules.integrations")
+local IntegrationsLive = require("modules.integrations_live")
 local diagnostics  = require("modules.diagnostics")
 local IpLog        = require("modules.ip_log")
 
@@ -137,9 +138,18 @@ function M.new(services)
         end,
     })
 
-    -- Integrations (detection only in Phase 1)
+    -- Integrations: install detection + live features (Discord Rich Presence, now playing, media keys)
     app.integrations = integrations.module({ getenv = services.getenv, exists = services.exists, platform = services.platform })
     app.registry:register(app.integrations)
+    app.live = IntegrationsLive.new({ config = app.config, win32 = services.win32, sessions = app.sessions,
+                                      clock = services.clock, log = app.log })
+    -- A game starting or stopping updates Discord at once (the frontend also ticks every few seconds).
+    local function live_tick()
+        local ok, err = pcall(app.live.tick, app.live)
+        if not ok then app.log:warn({ module = "integrations", event = "tick", outcome = "failed", error = tostring(err) }) end
+    end
+    app.events:on("game.started", live_tick)
+    app.events:on("game.stopped", live_tick)
 
     app.registry:start_all()
     app.metrics.startup_ms = (os.clock() - t0) * 1000
@@ -206,6 +216,17 @@ function M.attach_api(app)
     end)
 
     wrap("integrations", function(refresh) return app.integrations.list(app.ctx, refresh == true) end)
+    wrap("integration_tick", function() return app.live:tick() end)
+    wrap("media_control", function(action)
+        local ok, err = app.live:media(tostring(action or ""))
+        if not ok then error(err) end
+        return true
+    end)
+    wrap("discord_test", function()
+        local res, err = app.live:test()
+        if not res then error(err) end
+        return res
+    end)
 
     wrap("settings", function()
         return { values = app.config:all(), schema = schema.describe(), issues = util.array(util.deep_copy(app.config.issues)) }
@@ -278,6 +299,7 @@ function M.attach_api(app)
 end
 
 function M.shutdown(app)
+    if app.live then pcall(app.live.shutdown, app.live) end
     app.log:info({ module = "startup", event = "shutdown" })
     app.registry:stop_all()
     if app.sessions then app.sessions:save() end

@@ -152,4 +152,18 @@ export const CSS = `
 @keyframes oemt-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .oemt-root { --oemt-speed: 0s; } .oemt-root * { animation: none !important; } }
 
+
+/* Integrations and now playing */
+.oemt-int-grid { grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); align-items: start; }
+.oemt-integration { display: flex; flex-direction: column; }
+.oemt-int-title { margin: 0; font-size: 15px; font-weight: 700; }
+.oemt-caps { margin-top: var(--oemt-s3); }
+.oemt-caps summary { cursor: pointer; }
+.oemt-nowplaying { padding: var(--oemt-s3) var(--oemt-s4); }
+.oemt-np-compact { padding: var(--oemt-s2); background: var(--oemt-raised); }
+.oemt-np-text { display: flex; flex-direction: column; min-width: 0; }
+.oemt-np-title, .oemt-np-artist { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.oemt-np-artist { font-size: 12px; }
+.oemt-icon-btn { width: 32px; height: 28px; padding: 0; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; }
+.oemt-small-btn { padding: 4px 10px; font-size: 12px; }
 `;

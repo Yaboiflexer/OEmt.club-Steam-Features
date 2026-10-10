@@ -52,6 +52,9 @@ Swap '"MatchRegexString"\s*:\s*"\.\*"(\s*,\s*"TargetJs"\s*:\s*"src/js/utils\.js"
 Swap '(?s)\{\s*"MatchRegexString"\s*:\s*"https://\.\*\\\\\.steampowered\\\\\.com\(/\.\*\)\?"\s*,\s*"TargetJs"\s*:\s*"src/js/webkit\.js"\s*\}\s*,' ''
 Swap '("TargetCss"\s*:\s*"src/css/custom/custom\.css")\s*,\s*"TargetJs"\s*:\s*"src/js/webkit\.js"' '$1'
 
+# Back/forward arrows in the title bar hidden by default ("Navigation buttons" option: yes = hide).
+Swap '("Navigation buttons"\s*:\s*\{[^{]*?"default"\s*:\s*)"no"' '${1}"yes"'
+
 # Smaller corners by default (SpaceTheme: 8px).
 Swap '("Border radius"\s*:\s*\{[^{]*?Default: )8px' '${1}6px'
 Swap '("Border radius"\s*:\s*\{[^{]*?"default"\s*:\s*)8\b' '${1}6'

@@ -44,9 +44,12 @@ M.fields = {
 
     -- Integrations are opt-in. Phase 1 performs detection only; enabling records consent for later phases.
     ["integrations.discord.enabled"]    = { type = "bool", default = false, label = "Discord", group = "integrations" },
+    ["integrations.discord.client_id"]  = { type = "string", max_len = 20, pattern = "^%d*$", default = "",
+                                           label = "Discord Application ID (from discord.com/developers; public, not a secret)", group = "integrations" },
+    ["integrations.discord.idle_presence"] = { type = "bool", default = false, label = "Discord: show \"In Steam\" when no game is running", group = "integrations" },
+    ["integrations.discord.show_music"] = { type = "bool", default = false, label = "Discord: show the song you are listening to", group = "integrations" },
     ["integrations.spotify.enabled"]    = { type = "bool", default = false, label = "Spotify", group = "integrations" },
     ["integrations.soundcloud.enabled"] = { type = "bool", default = false, label = "SoundCloud", group = "integrations" },
-    ["integrations.tcno.enabled"]       = { type = "bool", default = false, label = "TcNo Account Switcher", group = "integrations" },
     ["integrations.insights.enabled"]   = { type = "bool", default = false, label = "Insights.gg", group = "integrations" },
 }
 
@@ -96,6 +99,7 @@ function M.check(key, value)
     elseif t == "string" then
         if type(value) ~= "string" then return false, "expected string" end
         if f.max_len and #value > f.max_len then return false, "too long" end
+        if f.pattern and not value:match(f.pattern) then return false, "invalid format" end
         return true, value
     end
     return false, "unsupported type"
