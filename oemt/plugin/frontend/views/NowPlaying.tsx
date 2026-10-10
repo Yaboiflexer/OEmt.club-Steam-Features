@@ -3,6 +3,7 @@
 import { FC, useState } from 'react';
 import { MediaAction } from '../api';
 import * as live from '../liveStore';
+import { openWeb, WEB_PAGES } from '../web';
 import { Pill } from '../ui';
 
 const SOURCE_LABEL = { spotify: 'Spotify', soundcloud: 'SoundCloud' } as const;
@@ -32,6 +33,8 @@ export const NowPlayingCard: FC<{ visible: boolean; compact?: boolean; onOpenInt
 				<span className="oemt-label" style={{ margin: 0 }}>Now playing</span>
 				{np && <span className="oemt-muted oemt-small">{SOURCE_LABEL[np.source]}</span>}
 				<div className="oemt-spacer" />
+				{!compact && <button className="oemt-btn oemt-small-btn" onClick={() => openWeb(WEB_PAGES.spotify)} title="Open the Spotify web player in Steam">Spotify</button>}
+				{!compact && <button className="oemt-btn oemt-small-btn" onClick={() => openWeb(WEB_PAGES.soundcloud)} title="Open SoundCloud in Steam">SoundCloud</button>}
 				{discordPill}
 				{!compact && onOpenIntegrations && <button className="oemt-btn oemt-small-btn" onClick={onOpenIntegrations}>Integrations</button>}
 			</div>

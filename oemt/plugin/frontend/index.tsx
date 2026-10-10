@@ -7,6 +7,7 @@ import { api } from './api';
 import { startLifetimeTracking } from './games';
 import { startIpLogging } from './iplog';
 import * as live from './liveStore';
+import { openWeb } from './web';
 import { NowPlayingCard } from './views/NowPlaying';
 import { getCurrentTab, getIntegration, openPath, requestTab, setIntegration, setPathNavigator, subscribeNav } from './nav';
 import { DEFAULT_TAB, OEMT_ROUTE, OEMT_ROUTE_PATTERN, resolveRoute, routeToPath, startTarget } from './routes';
@@ -83,7 +84,7 @@ const TopbarFallback: FC = () => {
 		}}>
 			<span style={{ padding: '6px 8px', opacity: 0.6 }}>OEMT.CLUB</span>
 			{items.map((it) => (
-				<button key={it.id} onClick={() => (it.kind === 'tab' ? openTab(it.id) : it.route && Navigation.Navigate(it.route))}
+				<button key={it.id} onClick={() => (it.kind === 'tab' ? openTab(it.id) : it.kind === 'web' ? it.url && openWeb(it.url) : it.route && Navigation.Navigate(it.route))}
 					style={{ appearance: 'none', border: 0, background: 'none', color: '#dcdedf', padding: '6px 8px', cursor: 'pointer', font: 'inherit', textTransform: 'uppercase' }}>
 					{it.label}
 				</button>
@@ -146,6 +147,7 @@ export default definePlugin(() => {
 			mainDocument: () => steamwin.mainWindow()?.document,
 			openTab,
 			openRoute: (route) => Navigation.Navigate(route),
+			openWeb: (url) => { openWeb(url); },
 			steamLabels,
 			log: (event, msg) => api.log('info', event, msg),
 		},

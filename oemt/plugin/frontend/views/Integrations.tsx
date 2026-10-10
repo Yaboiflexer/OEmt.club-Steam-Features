@@ -3,6 +3,7 @@
 import { FC, ReactNode, useEffect, useState } from 'react';
 import { api, CapabilityStatus, Integration, MediaAction } from '../api';
 import * as live from '../liveStore';
+import { openWeb, WEB_PAGES } from '../web';
 import { useTabActive } from '../shell';
 import { Empty, ErrorText, fmtBytes, fmtTime, Pill, useAsync } from '../ui';
 
@@ -213,7 +214,12 @@ export const IntegrationsView: FC = () => {
 					<Card i={byId.get('spotify')!}>
 						<Toggle checked={on('spotify')} disabled={busy} onChange={(x) => save('integrations.spotify.enabled', x)}>Now playing and controls for Spotify</Toggle>
 						{on('spotify') && nowPlayingFor('spotify')}
+						<div className="oemt-row oemt-wrap">
+							<button className="oemt-btn" onClick={() => openWeb(WEB_PAGES.spotify)}>Open Spotify Web Player</button>
+							<button className="oemt-btn" onClick={() => openWeb(WEB_PAGES.spotify_playlists)}>Your playlists</button>
+						</div>
 						<span className="oemt-muted oemt-small">Reads the song from the Spotify window title. No login, works on Free and Premium.</span>
+						<span className="oemt-muted oemt-small">The web player opens in Steam's browser. Browse and pick music there; if it can't play in Steam, choose your Spotify app as the device (Spotify Connect).</span>
 					</Card>
 				)}
 
@@ -221,6 +227,10 @@ export const IntegrationsView: FC = () => {
 					<Card i={byId.get('soundcloud')!}>
 						<Toggle checked={on('soundcloud')} disabled={busy} onChange={(x) => save('integrations.soundcloud.enabled', x)}>Now playing and controls for SoundCloud</Toggle>
 						{on('soundcloud') && nowPlayingFor('soundcloud')}
+						<div className="oemt-row oemt-wrap">
+							<button className="oemt-btn" onClick={() => openWeb(WEB_PAGES.soundcloud)}>Open SoundCloud</button>
+							<button className="oemt-btn" onClick={() => openWeb(WEB_PAGES.soundcloud_playlists)}>Your playlists</button>
+						</div>
 						<span className="oemt-muted oemt-small">Reads the playing track from your browser's SoundCloud tab (Chrome, Edge, Firefox, Brave, Opera, Vivaldi).</span>
 					</Card>
 				)}

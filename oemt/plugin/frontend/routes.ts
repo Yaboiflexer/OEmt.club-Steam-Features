@@ -39,7 +39,7 @@ export function resolveRoute(id: string | undefined | null): Route {
 
 // ---- Steam top bar ------------------------------------------------------------------------------
 
-export interface TopbarItem { id: string; label: string; kind: 'tab' | 'route'; route?: string }
+export interface TopbarItem { id: string; label: string; kind: 'tab' | 'route' | 'web'; route?: string; url?: string }
 
 /** Everything that may appear in Steam's top bar. Steam's own STORE/LIBRARY/COMMUNITY come first there,
  *  so only OEmt pages and Millennium's Themes & Plugins are offered here. Diagnostics is offered but off
@@ -49,6 +49,8 @@ export const TOPBAR_CHOICES: TopbarItem[] = [
 	{ id: 'settings', label: 'Settings', kind: 'tab' },
 	{ id: 'diagnostics', label: 'Diagnostics', kind: 'tab' },
 	{ id: 'integrations', label: 'Integrations', kind: 'tab' },
+	{ id: 'spotify', label: 'Spotify', kind: 'web', url: 'https://open.spotify.com/' },
+	{ id: 'soundcloud', label: 'SoundCloud', kind: 'web', url: 'https://soundcloud.com/discover' },
 	{ id: 'themes', label: 'Themes & Plugins', kind: 'route', route: '/millennium/settings' },
 ];
 

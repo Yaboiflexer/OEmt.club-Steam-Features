@@ -101,6 +101,8 @@ export interface TopbarDeps {
 	openTab(id: string): void;
 	/** Open a Steam route (e.g. Millennium's settings). */
 	openRoute(route: string): void;
+	/** Open a web page in Steam's browser (Spotify, SoundCloud). */
+	openWeb(url: string): void;
 	/** Steam's localized labels for Store / Library / Community, used by the structural search. */
 	steamLabels(): string[];
 	log(event: string, msg: string): void;
@@ -204,7 +206,7 @@ function render(doc: Document, found: Row, deps: TopbarDeps) {
 			label.className = found.labelClass;
 			label.textContent = it.label.toUpperCase();
 			el.append(label);
-			const go = () => (it.kind === 'tab' ? deps.openTab(it.id) : it.route && deps.openRoute(it.route));
+			const go = () => (it.kind === 'tab' ? deps.openTab(it.id) : it.kind === 'web' ? it.url && deps.openWeb(it.url) : it.route && deps.openRoute(it.route));
 			el.addEventListener('click', go);
 			el.addEventListener('keydown', (e) => {
 				if (e.key === 'Enter' || e.key === ' ') {
