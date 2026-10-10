@@ -531,7 +531,7 @@ void millennium_updater::win32_update_legacy_shims()
 
     } catch (std::exception& e) {
         LOG_ERROR("Failed to update {}: {}", SHIM_LOADER_PATH, e.what());
-        platform::messagebox::show("Millennium", std::format("Failed to update {}, it's recommended that you reinstall Millennium.", SHIM_LOADER_PATH),
+        platform::messagebox::show("OEmt.club", std::format("Failed to update {}, it's recommended that you reinstall OEmt.club.", SHIM_LOADER_PATH),
                                    platform::messagebox::error);
     }
 #endif

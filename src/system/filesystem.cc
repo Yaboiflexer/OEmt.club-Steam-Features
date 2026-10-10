@@ -86,7 +86,7 @@ std::filesystem::path get_steam_path()
 
 std::filesystem::path get_millennium_path()
 {
-    return get_steam_path() / "millennium";
+    return get_steam_path() / OEMT_INSTALL_DIR_NAME; /* OEmt.club: <steam>/oemt */
 }
 
 std::filesystem::path get_millennium_bin_path()

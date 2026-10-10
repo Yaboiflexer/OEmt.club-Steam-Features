@@ -56,7 +56,7 @@ static std::string get_lua_host_exe()
 #if defined(__LUA_HOST_OUTPUT_ABSPATH__)
     return __LUA_HOST_OUTPUT_ABSPATH__;
 #elif defined(_WIN32)
-    return (platform::get_millennium_bin_path() / "millennium.luavm64.exe").string();
+    return (platform::get_millennium_bin_path() / __MILLENNIUM_RTB_OUTPUT_NAME__).string();
 #else
     return (platform::get_millennium_bin_path() / "libmillennium_luavm_x86").string();
 #endif

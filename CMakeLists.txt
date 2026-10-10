@@ -6,10 +6,10 @@ project(MillenniumBuildSlave)
 add_compile_definitions(MILLENNIUM_$<IF:$<CONFIG:Debug>,DEBUG,RELEASE> MILLENNIUM_64BIT)
 
 if(WIN32)
-    # Windows build names
-    set(MILLENNIUM_OUTPUT_NAME                     "millennium.dll"                )
-    set(MILLENNIUM_HOOK_HELPER_OUTPUT_NAME         "millennium.hhx64.dll"          )
-    set(MILLENNIUM_BOOTLOADER_OUTPUT_NAME          "millennium.bootstrap64.dll"    )
+    # Windows build names (OEmt.club)
+    set(MILLENNIUM_OUTPUT_NAME                     "oemt.dll"                      )
+    set(MILLENNIUM_HOOK_HELPER_OUTPUT_NAME         "oemt.hhx64.dll"                )
+    set(MILLENNIUM_BOOTLOADER_OUTPUT_NAME          "oemt.bootstrap64.dll"          )
 elseif(APPLE)
     # macOS build names
     set(MILLENNIUM_OUTPUT_NAME                     "libmillennium.dylib"           )
@@ -25,8 +25,10 @@ endif()
 
 # Millennium lua host that runs the backend in a sandbox.
 if(WIN32)
-    set(MILLENNIUM_RTB_NAME "millennium.luavm64")
-    set(MILLENNIUM_CRASH_HANDLER_NAME "millennium.crashhandler64")
+    set(MILLENNIUM_RTB_NAME "oemt.luavm64")
+    set(MILLENNIUM_CRASH_HANDLER_NAME "oemt.crashhandler64")
+    add_compile_definitions(__MILLENNIUM_RTB_OUTPUT_NAME__="${MILLENNIUM_RTB_NAME}.exe")
+    add_compile_definitions(__MILLENNIUM_CRASH_HANDLER_OUTPUT_NAME__="${MILLENNIUM_CRASH_HANDLER_NAME}.exe")
 else()
     set(MILLENNIUM_RTB_NAME "libmillennium_luavm_x86")
 endif()
@@ -37,6 +39,10 @@ add_compile_definitions(__MILLENNIUM_BOOTLOADER_OUTPUT_NAME__="${MILLENNIUM_BOOT
 if(DEFINED MILLENNIUM_CHILD_HOOK_OUTPUT_NAME)
     add_compile_definitions(__MILLENNIUM_CHILD_HOOK_OUTPUT_NAME__="${MILLENNIUM_CHILD_HOOK_OUTPUT_NAME}")
 endif()
+
+# OEmt.club install folder under the Steam directory (holds lib/, bin/, plugins/, themes/, config/, logs/).
+set(OEMT_INSTALL_DIR_NAME "oemt")
+add_compile_definitions(OEMT_INSTALL_DIR_NAME="${OEMT_INSTALL_DIR_NAME}")
 
 # OEmt.club self-update source (a GitHub "releases" API URL). Empty disables self-update,
 # so an OEmt.club build never installs upstream Millennium releases over itself.

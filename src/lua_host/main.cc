@@ -622,9 +622,9 @@ int main(int argc, char* argv[])
 #ifdef _WIN32
         SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
         MessageBoxA(nullptr,
-                    "This is an internal Millennium runtime component.\n"
+                    "This is an internal OEmt.club runtime component.\n"
                     "It is not meant to be run directly.\n\n"
-                    "Please launch Steam with Millennium instead.",
+                    "Please launch Steam with OEmt.club installed instead.",
                     MILLENNIUM_RTB_NAME, MB_OK | MB_ICONINFORMATION);
 #else
         fprintf(stderr,

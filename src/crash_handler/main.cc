@@ -148,10 +148,10 @@ int main(int argc, char* argv[])
     if (argc < 2) {
         SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
         MessageBoxA(nullptr,
-                    "This is an internal Millennium runtime component.\n"
+                    "This is an internal OEmt.club runtime component.\n"
                     "It is not meant to be run directly.\n\n"
-                    "Please launch Steam with Millennium instead.",
-                    "millennium.crashhandler64.exe", MB_OK | MB_ICONINFORMATION);
+                    "Please launch Steam with OEmt.club installed instead.",
+                    __MILLENNIUM_CRASH_HANDLER_OUTPUT_NAME__, MB_OK | MB_ICONINFORMATION);
         return 1;
     }
 
@@ -167,7 +167,7 @@ int main(int argc, char* argv[])
     }
 
     if (!steam_pid || !steam_process) {
-        fprintf(stderr, "usage: millennium.crashhandler64.exe --steam-pid=<N> --steam-handle=<hex>\n");
+        fprintf(stderr, "usage: " __MILLENNIUM_CRASH_HANDLER_OUTPUT_NAME__ " --steam-pid=<N> --steam-handle=<hex>\n");
         return 1;
     }
 

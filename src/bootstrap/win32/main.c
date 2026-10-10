@@ -42,6 +42,10 @@ void* __stdcall LoadLibraryExW(const wchar_t* lpLibFileName, void* hFile, unsign
 unsigned long __stdcall GetModuleFileNameW(void* hModule, wchar_t* lpFilename, unsigned long nSize);
 int __stdcall MessageBoxW(void* hWnd, const wchar_t* lpText, const wchar_t* lpCaption, unsigned int uType);
 
+/** turn a narrow string-literal macro from CMake into a wide literal */
+#define OEMT_WIDEN_(s) L##s
+#define OEMT_WIDEN(s) OEMT_WIDEN_(s)
+
 // /** fwd decl standard c funcs */
 int __cdecl wsprintfW(wchar_t* buf, const wchar_t* fmt, ...);
 
@@ -57,10 +61,10 @@ static void show_error(unsigned long errorCode, const wchar_t* dll_path)
 {
     wchar_t msg[512];
     wsprintfW(msg,
-              L"Millennium failed to load (%s). This will not affect the functionality of the Steam Client.\n\nCommon Causes:\n- Antivirus deleting Millennium\n- Outdated "
-              L"Millennium version, try updating\n\nError Code: %lu",
+              L"OEmt.club failed to load (%s). This will not affect the functionality of the Steam Client.\n\nCommon Causes:\n- Antivirus deleting OEmt.club\n- Outdated "
+              L"OEmt.club version, try reinstalling\n\nError Code: %lu",
               dll_path, errorCode);
-    MessageBoxW(0, msg, L"Millennium", 0x00000010l /** magic number -> MB_ICONERROR */);
+    MessageBoxW(0, msg, L"OEmt.club", 0x00000010l /** magic number -> MB_ICONERROR */);
 }
 
 /**
@@ -103,14 +107,14 @@ int __stdcall DllMain(void* hinstDLL, unsigned long fdwReason, void* lpReserved)
         wchar_t* last_sep = wcsrchr(self_path, L'\\');
         if (last_sep) *(last_sep + 1) = L'\0';
 
-        /* Build millennium\lib path and add to DLL search */
+        /* Build <install dir>\lib path and add to DLL search (names come from CMake) */
         wchar_t lib_dir[MAX_PATH];
-        wsprintfW(lib_dir, L"%smillennium\\lib", self_path);
+        wsprintfW(lib_dir, L"%s" OEMT_WIDEN(OEMT_INSTALL_DIR_NAME) L"\\lib", self_path);
         AddDllDirectory(lib_dir);
 
         /* Build full DLL path */
         wchar_t dll_path[MAX_PATH];
-        wsprintfW(dll_path, L"%s\\millennium.dll", lib_dir);
+        wsprintfW(dll_path, L"%s\\" OEMT_WIDEN(__MILLENNIUM_OUTPUT_NAME__), lib_dir);
 
         const void* hModule = LoadLibraryExW(dll_path, NULL, LOAD_LIBRARY_SEARCH_USER_DIRS | LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
         if (!hModule) {

@@ -90,10 +90,10 @@ BOOL AreFilesIdentical(LPCWSTR path1, LPCWSTR path2)
  */
 VOID Win32_AttachWebHelperHook(VOID)
 {
-    const auto hookPath = platform::get_millennium_path() / "lib" / "millennium.hhx64.dll";
+    const auto hookPath = platform::get_millennium_path() / "lib" / __MILLENNIUM_HOOK_HELPER_OUTPUT_NAME__;
 
     if (!std::filesystem::exists(hookPath)) {
-        platform::messagebox::show("Millennium Error", "Millennium webhelper hook is missing. Please reinstall Millennium.", platform::messagebox::error);
+        platform::messagebox::show("OEmt.club Error", "The OEmt.club webhelper hook is missing. Please reinstall OEmt.club.", platform::messagebox::error);
         return;
     }
 
@@ -120,8 +120,8 @@ VOID Win32_AttachWebHelperHook(VOID)
         BOOL result = CreateHardLinkW(targetPath.wstring().c_str(), hookPath.wstring().c_str(), NULL);
         if (!result) {
             platform::messagebox::show(
-                "Millennium Error",
-                std::format("Failed to create hardlink for Millennium webhelper hook.\nTarget: {}\nError Code: {}\nMake sure Steam is not running and try again.",
+                "OEmt.club Error",
+                std::format("Failed to create hardlink for the OEmt.club webhelper hook.\nTarget: {}\nError Code: {}\nMake sure Steam is not running and try again.",
                             targetPath.string(), GetLastError())
                     .c_str(),
                 platform::messagebox::error);
@@ -140,7 +140,7 @@ VOID Win32_MoveVersionHook(VOID)
 
     if (!MoveFileExW(versionHookPath.wstring().c_str(), targetPath.wstring().c_str(), MOVEFILE_REPLACE_EXISTING)) {
         const DWORD error = GetLastError();
-        platform::messagebox::show("Millennium Error", std::format("Failed to move legacy version.dll hook.\nError Code: {}", error).c_str(), platform::messagebox::error);
+        platform::messagebox::show("OEmt.club Error", std::format("Failed to move legacy version.dll hook.\nError Code: {}", error).c_str(), platform::messagebox::error);
     }
 }
 
@@ -272,7 +272,7 @@ static VOID Win32_MigrateLegacyLayout(VOID)
 VOID Win32_AttachMillennium(VOID)
 {
     if (!platform::initialize_steam_hooks()) {
-        platform::messagebox::show("Millennium Error", "Failed to initialize Steam hooks, Millennium cannot continue startup.", platform::messagebox::error);
+        platform::messagebox::show("OEmt.club Error", "Failed to initialize Steam hooks, OEmt.club cannot continue startup.", platform::messagebox::error);
     }
 
     install_millennium_crash_handler();
@@ -307,7 +307,7 @@ VOID Win32_DetachMillennium(VOID)
     logger.log("Waiting for Millennium thread to exit...");
 
     if (!g_millenniumThread.joinable()) {
-        platform::messagebox::show("Warning", "Millennium thread is not joinable, skipping join. This is likely because Millennium failed to start properly.",
+        platform::messagebox::show("Warning", "OEmt.club thread is not joinable, skipping join. This is likely because OEmt.club failed to start properly.",
                                    platform::messagebox::warn);
         return;
     }

@@ -439,8 +439,9 @@ fn resolve_auto_output(plugin_id: &str) -> anyhow::Result<PathBuf> {
             .and_then(|key| key.get_value::<String, _>("InstallPath"))
             .map_err(|_| anyhow::anyhow!("auto: Steam installation not found in registry"))?;
 
+        // OEmt.club installs under <steam>/oemt (see OEMT_INSTALL_DIR_NAME in CMakeLists.txt)
         let path = PathBuf::from(steam_path)
-            .join("millennium/plugins")
+            .join("oemt/plugins")
             .join(&filename);
         if let Some(parent) = path.parent() {
             std::fs::create_dir_all(parent).map_err(|e| {

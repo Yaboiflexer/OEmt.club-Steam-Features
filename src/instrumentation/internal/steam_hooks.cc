@@ -582,7 +582,7 @@ VOID install_create_process_hook()
                 LOG_ERROR("CreateProcessInternalW hook creation failed (snare_inline_new returned null)");
             }
         } else {
-            platform::messagebox::show("Millennium", "Failed to resolve CreateProcessInternalW from kernelbase.dll or kernel32.dll", platform::messagebox::error);
+            platform::messagebox::show("OEmt.club", "Failed to resolve CreateProcessInternalW from kernelbase.dll or kernel32.dll", platform::messagebox::error);
         }
     });
 }

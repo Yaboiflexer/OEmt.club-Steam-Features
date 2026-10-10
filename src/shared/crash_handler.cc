@@ -80,7 +80,7 @@ static HANDLE s_shutdown_event = nullptr;
 static HANDLE s_watchdog_process = nullptr;
 
 static const crash_report_info s_info = {
-    "Millennium Crash Report", "millennium.dll", nullptr, nullptr, "[millennium]",
+    "OEmt.club Crash Report", __MILLENNIUM_OUTPUT_NAME__, nullptr, nullptr, "[oemt]",
 };
 
 static bool millennium_watchdog_available()
@@ -117,9 +117,9 @@ static void spawn_watchdog()
     s_ctx.shm->version = CRASH_IPC_VERSION;
     s_ctx.shm->steam_pid = steam_pid;
     strncpy(s_ctx.shm->crash_dump_base, s_crash_dump_base.c_str(), sizeof(s_ctx.shm->crash_dump_base) - 1);
-    strncpy(s_ctx.shm->component_name, "millennium.dll", sizeof(s_ctx.shm->component_name) - 1);
-    strncpy(s_ctx.shm->log_prefix, "[millennium]", sizeof(s_ctx.shm->log_prefix) - 1);
-    strncpy(s_ctx.shm->report_title, "Millennium Crash Report", sizeof(s_ctx.shm->report_title) - 1);
+    strncpy(s_ctx.shm->component_name, __MILLENNIUM_OUTPUT_NAME__, sizeof(s_ctx.shm->component_name) - 1);
+    strncpy(s_ctx.shm->log_prefix, "[oemt]", sizeof(s_ctx.shm->log_prefix) - 1);
+    strncpy(s_ctx.shm->report_title, "OEmt.club Crash Report", sizeof(s_ctx.shm->report_title) - 1);
 
     char req_name[128], done_name[128], stop_name[128];
     crash_ipc_request_event_name(req_name, sizeof(req_name), steam_pid);
@@ -138,7 +138,7 @@ static void spawn_watchdog()
         return;
     }
 
-    const std::string handler_exe = (platform::get_millennium_bin_path() / "millennium.crashhandler64.exe").string();
+    const std::string handler_exe = (platform::get_millennium_bin_path() / __MILLENNIUM_CRASH_HANDLER_OUTPUT_NAME__).string();
     char cmd[1024];
     snprintf(cmd, sizeof(cmd), "\"%s\" --steam-pid=%u --steam-handle=%llX", handler_exe.c_str(), steam_pid, (unsigned long long)(uintptr_t)inheritable_handle);
 

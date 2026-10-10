@@ -1,0 +1,21 @@
+OEmt.club - install (test build)
+================================
+
+1. Fully close Steam (right-click the tray icon -> Exit).
+2. If Millennium is installed, remove it first: delete wsock32.dll and the "millennium"
+   folder from your Steam folder (back them up if you want to go back). OEmt.club and
+   Millennium cannot be installed at the same time; both use wsock32.dll.
+3. Copy everything from this zip into your Steam folder
+   (usually C:\Program Files (x86)\Steam), so that you get:
+       Steam\wsock32.dll
+       Steam\oemt\lib\oemt.dll, oemt.hhx64.dll
+       Steam\oemt\bin\oemt.luavm64.exe, oemt.crashhandler64.exe
+       Steam\oemt\plugins\club.oemt.core.star
+4. Start Steam. The OEmt.club plugin is enabled automatically on first run.
+   Open it from the Quick Access menu ("Open OEmt.club").
+
+Your data lives in Steam\oemt\ (config, logs, plugins, themes).
+Millennium plugins (.star) and themes still work: put them in Steam\oemt\plugins and
+Steam\oemt\themes.
+
+Uninstall: close Steam, delete Steam\wsock32.dll and the Steam\oemt folder.
