@@ -28,12 +28,11 @@ Install
 4. Start Steam. OEmt.club turns itself on the first time.
 5. Pick the theme: Steam menu > OEmt.club > Themes > OEmt.club > Use. Steam reloads its UI.
 
-Set up Discord Rich Presence (optional)
-1. Go to https://discord.com/developers/applications > New Application, name it "OEmt.club".
-2. Copy its Application ID.
-3. In Steam: OEmt.club > Settings > Discord Rich Presence: turn it on and paste the ID.
-   Press Test: your Discord profile shows "Rich Presence is working" for 15 seconds.
-   Discord must be running on the same PC. No login or token is used.
+Discord Rich Presence
+- Built in and on by default: no setup. With the Discord app running on the same PC, your profile
+  shows the game you play, for how long, and a "Join OEmt.club" button.
+- Settings > Discord Rich Presence: turn it off, show "In Steam" when idle, hide the button, or press
+  Test ("Rich Presence is working" shows for 15 seconds). No login or token is used.
 
 Good to know
 - Everything runs on your PC. OEmt.club never asks for or stores passwords.

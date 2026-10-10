@@ -220,7 +220,7 @@ T.test("Discord Rich Presence through the API: tick, settings, test", function()
     }
     local app = boot({ win32 = win32 })
     local st = ok_data(app.api.integration_tick(), "tick")
-    T.falsy(st.discord.enabled)
+    T.truthy(st.discord.enabled, "on by default"); T.truthy(st.discord.configured, "built-in app ID")
     T.falsy(app.api.set_setting("integrations.discord.client_id", "12ab").ok, "digits only")
     ok_data(app.api.set_setting("integrations.discord.client_id", "123456789012345678"), "app id")
     ok_data(app.api.set_setting("integrations.discord.enabled", true), "enable discord")

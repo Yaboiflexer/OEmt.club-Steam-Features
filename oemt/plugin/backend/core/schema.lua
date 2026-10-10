@@ -42,10 +42,11 @@ M.fields = {
                                             steam_community = "Steam Community", steam_profile = "My Steam profile" },
                                  default = "sessions", label = "Start page when Steam opens", group = "appearance" },
 
-    -- Discord Rich Presence (opt-in). The Application ID is public; no token or login is used.
-    ["integrations.discord.enabled"]    = { type = "bool", default = false, label = "Discord", group = "integrations" },
+    -- Discord Rich Presence (on by default, through the built-in OEmt.club app). The Application ID is
+    -- public; no token or login is used. client_id is an optional override; empty = OEmt.club's app.
+    ["integrations.discord.enabled"]    = { type = "bool", default = true, label = "Discord", group = "integrations" },
     ["integrations.discord.client_id"]  = { type = "string", max_len = 20, pattern = "^%d*$", default = "",
-                                           label = "Discord Application ID (from discord.com/developers; public, not a secret)", group = "integrations" },
+                                           label = "Own Discord Application ID (optional; empty uses the OEmt.club app)", group = "integrations" },
     ["integrations.discord.idle_presence"] = { type = "bool", default = false, label = "Discord: show \"In Steam\" when no game is running", group = "integrations" },
     ["integrations.discord.invite_button"] = { type = "bool", default = true, label = "Discord: add a \"Join OEmt.club\" button (discord.gg/OEmt)", group = "integrations" },
 }

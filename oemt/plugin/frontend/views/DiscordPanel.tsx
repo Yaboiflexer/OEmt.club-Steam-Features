@@ -29,7 +29,7 @@ export const DiscordPanel: FC<{ values: Record<string, unknown>; onSaved: () => 
 	const saved = String(values['integrations.discord.client_id'] ?? '');
 	useEffect(() => setAppId(saved), [saved]);
 
-	const on = values['integrations.discord.enabled'] === true;
+	const on = values['integrations.discord.enabled'] !== false;
 	const flag = (k: string, dflt = false) => (values[k] === undefined ? dflt : values[k] === true);
 	const d = status?.discord;
 
@@ -86,12 +86,8 @@ export const DiscordPanel: FC<{ values: Record<string, unknown>; onSaved: () => 
 			{error ? <ErrorText error={error} /> : null}
 			{on && (
 				<div className="oemt-int-body">
-					<Setting label="Application ID" hint="From discord.com/developers. Public; no login or token.">
-						<div className="oemt-row" style={{ gap: 6 }}>
-							<input className="oemt-input oemt-compact-input" inputMode="numeric" placeholder="17-20 digits" value={appId} maxLength={24} aria-label="Discord Application ID"
-								onChange={(e) => setAppId(e.target.value)} onBlur={saveAppId} onKeyDown={(e) => e.key === 'Enter' && saveAppId()} />
-							<button className="oemt-btn oemt-small-btn" onClick={test} disabled={!d?.configured}>Test</button>
-						</div>
+					<Setting label="Test" hint={'Shows "Rich Presence is working" on your profile for 15 seconds. Discord must be running.'}>
+						<button className="oemt-btn oemt-small-btn" onClick={test}>Test</button>
 					</Setting>
 					<Setting label={'Show "In Steam" when idle'}>
 						<Switch checked={flag('integrations.discord.idle_presence')} disabled={busy} onChange={(x) => save('integrations.discord.idle_presence', x)} label="Show In Steam when idle" />
@@ -99,6 +95,13 @@ export const DiscordPanel: FC<{ values: Record<string, unknown>; onSaved: () => 
 					<Setting label={'"Join OEmt.club" button'} hint="Links discord.gg/OEmt">
 						<Switch checked={flag('integrations.discord.invite_button', true)} disabled={busy} onChange={(x) => save('integrations.discord.invite_button', x)} label="Join OEmt.club button" />
 					</Setting>
+					<details className="oemt-small">
+						<summary className="oemt-muted">Advanced: use your own Discord app</summary>
+						<Setting label="Own Application ID" hint="Optional. Leave empty to use the OEmt.club app. Public; no login or token.">
+							<input className="oemt-input oemt-compact-input" inputMode="numeric" placeholder="OEmt.club app" value={appId} maxLength={24} aria-label="Own Discord Application ID"
+								onChange={(e) => setAppId(e.target.value)} onBlur={saveAppId} onKeyDown={(e) => e.key === 'Enter' && saveAppId()} />
+						</Setting>
+					</details>
 					{d?.error && <div className="oemt-small" style={{ color: 'var(--oemt-warn)' }}>{d.error}</div>}
 					{note && <div className="oemt-small oemt-muted">{note}</div>}
 				</div>

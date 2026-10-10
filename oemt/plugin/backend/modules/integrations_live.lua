@@ -1,5 +1,5 @@
 -- Discord Rich Presence, driven by tick(): the frontend calls it every few seconds, and a game starting
--- or stopping calls it at once. Opt-in (integrations.discord.enabled); nothing is sent anywhere except
+-- or stopping calls it at once. On by default (integrations.discord.enabled); nothing is sent anywhere except
 -- to the Discord app running on this PC.
 local Discord = require("modules.discord_rpc")
 
@@ -7,6 +7,8 @@ local M = {}
 
 M.TEST_SECONDS = 15
 M.INVITE = { label = "Join OEmt.club", url = "https://discord.gg/OEmt" }
+-- The OEmt.club Discord application (public ID, not a secret). Used unless the user sets their own.
+M.APP_ID = "1558580525478846607"
 
 --- deps: { config, win32, sessions, clock, log }
 function M.new(deps)
@@ -27,6 +29,12 @@ end
 
 function M:enabled() return self.d.config:get("integrations.discord.enabled") == true end
 function M:opt(key) return self.d.config:get("integrations.discord." .. key) end
+--- The user's own Application ID, or "" to use OEmt.club's.
+function M:own_app_id() return tostring(self:opt("client_id") or "") end
+function M:app_id()
+    local own = self:own_app_id()
+    return own ~= "" and own or M.APP_ID
+end
 
 --- The game being played right now (newest running session), if any.
 function M:current_game()
@@ -52,7 +60,7 @@ end
 function M:tick()
     local on = self:enabled()
     if on and self.win32.available then
-        self.discord:connect(tostring(self:opt("client_id") or ""))
+        self.discord:connect(self:app_id())
         if self.discord.conn then self.discord:poll() end
         if self.discord.ready then
             local act
@@ -89,7 +97,8 @@ function M:status()
         available = self.win32.available == true,
         discord = {
             enabled = self:enabled(),
-            configured = Discord.valid_client_id(tostring(self:opt("client_id") or "")),
+            configured = Discord.valid_client_id(self:app_id()),
+            own_app = self:own_app_id() ~= "",
             connected = ds.connected,
             error = self:enabled() and ds.error or nil,
             retry_at = ds.retry_at,
@@ -102,7 +111,7 @@ end
 function M:test()
     if not self:enabled() then return nil, "Turn on Discord Rich Presence first" end
     if not self.win32.available then return nil, "Discord Rich Presence needs Windows" end
-    local ok, err = self.discord:connect(tostring(self:opt("client_id") or ""), true)
+    local ok, err = self.discord:connect(self:app_id(), true)
     if not ok then return nil, err end
     self.test_started = self.clock()
     self.test_until = self.test_started + M.TEST_SECONDS
