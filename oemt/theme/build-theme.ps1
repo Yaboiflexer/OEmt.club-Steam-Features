@@ -6,7 +6,8 @@
 # -SpaceTheme: a SpaceTheme checkout (https://github.com/SpaceTheme/Steam). Tested with commit 17f93c5.
 # -Out:        destination folder, e.g. "<Steam>\oemt\themes\OEmt". Replaced if it exists.
 param(
-    [Parameter(Mandatory)][string]$SpaceTheme,
+    # Upstream checkout lives in oemt\theme\upstream\SpaceTheme (git-ignored; clone https://github.com/SpaceTheme/Steam there).
+    [string]$SpaceTheme = (Join-Path $PSScriptRoot 'upstream\SpaceTheme'),
     [Parameter(Mandatory)][string]$Out
 )
 $ErrorActionPreference = 'Stop'

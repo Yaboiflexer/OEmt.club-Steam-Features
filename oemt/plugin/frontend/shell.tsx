@@ -36,7 +36,13 @@ export const Logo: FC = () => (
 	</svg>
 );
 
-const HEALTH_LABEL = { pass: 'Healthy', warn: 'Warnings', fail: 'Problems' } as const;
+/** "#5778aa" -> "87, 120, 170" (the theme's rgb-triplet format). */
+function hexToTriplet(hex?: string): string | undefined {
+	const m = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex ?? '');
+	return m ? `${parseInt(m[1], 16)}, ${parseInt(m[2], 16)}, ${parseInt(m[3], 16)}` : undefined;
+}
+
+const HEALTH_LABEL ={ pass: 'Healthy', warn: 'Warnings', fail: 'Problems' } as const;
 
 /** Steam's own areas, reachable from the OEmt tab strip. steam:// URLs are Steam's stable public entry points. */
 const STEAM_LINKS = [
@@ -101,12 +107,13 @@ export const Shell: FC = () => {
 		[selectedAppid, overview, refreshOverview],
 	);
 
-	const accent = overview?.settings.accent ?? '#577999';
+	// Colours come from the OEmt.club theme; ui.accent is only the fallback when the theme is off.
+	const fallback = hexToTriplet(overview?.settings.accent);
 	const reduced = overview?.settings.reduced_motion ?? false;
 
 	return (
 		<ShellContext.Provider value={shell}>
-			<div className={`oemt-root${reduced ? ' oemt-reduced-motion' : ''}`} style={{ ['--oemt-accent' as string]: accent }}>
+			<div className={`oemt-root${reduced ? ' oemt-reduced-motion' : ''}`} style={fallback ? { ['--oemt-accent-fallback' as string]: fallback } : undefined}>
 				<style>{CSS}</style>
 				{topbar.active ? (
 					// Items live in Steam's top bar; only tabs not placed there are offered here.
