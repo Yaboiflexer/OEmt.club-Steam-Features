@@ -6,9 +6,6 @@ type FfiResult = Promise<unknown>;
 
 declare const backend: {
 	OEmtGetOverview(): FfiResult;
-	OEmtGetLibrary(refresh: boolean): FfiResult;
-	OEmtPrepareLaunch(appid: string): FfiResult;
-	OEmtRecordLaunch(appid: string, outcome: string, detail: string): FfiResult;
 	OEmtSessionEvent(appid: number, instance: number, running: boolean): FfiResult;
 	OEmtGetSessions(limit: number): FfiResult;
 	OEmtClearSessions(): FfiResult;
@@ -25,10 +22,5 @@ declare const backend: {
 	OEmtGetIpLog(limit: number): FfiResult;
 	OEmtCheckIp(reason: string, appid: string): FfiResult;
 	OEmtClearIpLog(): FfiResult;
-	OEmtGetAccounts(): FfiResult;
-	OEmtSetAccountLabel(steamid: string, label: string): FfiResult;
-	OEmtSwitchAccount(steamid: string, state: string, launch_appid: string): FfiResult;
-	OEmtTakePendingLaunch(): FfiResult;
-	OEmtSaveAccountFolders(folders_json: string): FfiResult;
 	OEmtFrontendLog(level: string, event: string, message: string): FfiResult;
 };

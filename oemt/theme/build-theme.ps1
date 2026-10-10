@@ -43,6 +43,19 @@ Swap '(?s)("Font"\s*:\s*\{.*?"values"\s*:\s*\{)' ('$1' + "`n" + '               
 Swap '("Scrollbars"\s*:\s*\{[^{]*?"default"\s*:\s*)"[^"]*"' '$1"Modern (OEmt)"'
 Swap '(?s)("Scrollbars"\s*:\s*\{.*?"values"\s*:\s*\{)' ('$1' + "`n" + '                "Modern (OEmt)": { "TargetCss": { "affects": [".*"], "src": "options/general/modernScrollbars.css" } },')
 
+# Scripts: store.steampowered.com and steamcommunity.com refuse injected scripts (Content Security Policy),
+# which only filled Steam's log with errors. Keep SpaceTheme's scripts in Steam's own windows, drop them there.
+# Styles still apply everywhere. Millennium matches these with std::regex (ECMAScript), so lookahead works.
+$noWeb = '^(?!https?://([a-z0-9-]+\\.)*(steampowered|steamcommunity)\\.com).*'
+Swap '(?s)\{\s*"MatchRegexString"\s*:\s*"\.\*"\s*,\s*"TargetCss"\s*:\s*"src/css/regular\.css"\s*,\s*"TargetJs"\s*:\s*"src/js/regular\.js"\s*\}' ('{ "MatchRegexString": ".*", "TargetCss": "src/css/regular.css" },' + "`n        " + '{ "MatchRegexString": "' + $noWeb + '", "TargetJs": "src/js/regular.js" }')
+Swap '"MatchRegexString"\s*:\s*"\.\*"(\s*,\s*"TargetJs"\s*:\s*"src/js/utils\.js")' ('"MatchRegexString": "' + $noWeb + '"$1')
+Swap '(?s)\{\s*"MatchRegexString"\s*:\s*"https://\.\*\\\\\.steampowered\\\\\.com\(/\.\*\)\?"\s*,\s*"TargetJs"\s*:\s*"src/js/webkit\.js"\s*\}\s*,' ''
+Swap '("TargetCss"\s*:\s*"src/css/custom/custom\.css")\s*,\s*"TargetJs"\s*:\s*"src/js/webkit\.js"' '$1'
+
+# Smaller corners by default (SpaceTheme: 8px).
+Swap '("Border radius"\s*:\s*\{[^{]*?Default: )8px' '${1}6px'
+Swap '("Border radius"\s*:\s*\{[^{]*?"default"\s*:\s*)8\b' '${1}6'
+
 $skin = $script:skin
 
 # Title-bar text logo: SpaceTheme draws "Space" + "Theme" with CSS; make it "OEmt" + ".club" in the accent colors.
@@ -53,10 +66,35 @@ foreach ($pair in @(@('content: "Space" !important;', 'content: "OEmt" !importan
     if (-not $tb.Contains($pair[0])) { throw "titlebar.css: not found: $($pair[0])" }
     $tb = $tb.Replace($pair[0], $pair[1])
 }
+# Title-bar Steam menu: the OEmt mark (white) instead of Steam's logo.
+$tb += @'
+
+/* OEmt mark instead of the Steam logo in the title bar's Steam menu (added by OEmt build-theme.ps1) */
+._2UyOBeiSdBayaFdRa39N2O:nth-of-type(1) svg {
+    display: none !important;
+}
+._2UyOBeiSdBayaFdRa39N2O:nth-of-type(1)::before {
+    content: "";
+    flex: none;
+    width: 16px;
+    height: 16px;
+    margin-right: 6px;
+    background: url("../../icons/logo-light.svg") center / contain no-repeat;
+}
+'@
 [IO.File]::WriteAllText($tbPath, $tb, $utf8)
+
+# Sidebar home button: SpaceTheme tilts its logo 35 degrees; the OEmt mark stays upright.
+$sbPath = Join-Path $Out 'src\css\steam\sidebar.css'
+$sb = [IO.File]::ReadAllText($sbPath, $utf8)
+if (-not $sb.Contains('transform: rotate(35deg) scale(1.2);')) { throw 'sidebar.css: logo transform not found' }
+$sb = $sb.Replace('transform: rotate(35deg) scale(1.2);', 'transform: scale(1.1);')
+[IO.File]::WriteAllText($sbPath, $sb, $utf8)
 
 $doc = $skin | ConvertFrom-Json
 if ($doc.name -ne 'OEmt.club' -or $doc.github -or $doc.Conditions.Font.default -ne 'Lucida Console (OEmt)' -or $doc.Conditions.Scrollbars.default -ne 'Modern (OEmt)') { throw 'skin.json edit check failed' }
+if (@($doc.Patches | Where-Object { $_.TargetJs -eq 'src/js/webkit.js' }).Count -ne 0) { throw 'skin.json: webkit.js still injected into web pages' }
+if (@($doc.Patches | Where-Object { $_.TargetJs -in 'src/js/regular.js', 'src/js/utils.js' -and $_.MatchRegexString -eq '.*' }).Count -ne 0) { throw 'skin.json: scripts still match web pages' }
 [IO.File]::WriteAllText($skinPath, $skin, $utf8)
 
 $notice = @"

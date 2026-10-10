@@ -14,23 +14,6 @@ end
 function OEmtGetOverview() return call("overview") end
 
 ---@ffi
----@param refresh boolean
----@return table
-function OEmtGetLibrary(refresh) return call("library", refresh) end
-
----@ffi
----@param appid string
----@return table
-function OEmtPrepareLaunch(appid) return call("prepare_launch", appid) end
-
----@ffi
----@param appid string
----@param outcome string
----@param detail string
----@return table
-function OEmtRecordLaunch(appid, outcome, detail) return call("record_launch", appid, outcome, detail) end
-
----@ffi
 ---@param appid number
 ---@param instance number
 ---@param running boolean
@@ -108,32 +91,6 @@ function OEmtCheckIp(reason, appid) return call("ip_check", reason, appid) end
 ---@ffi
 ---@return table
 function OEmtClearIpLog() return call("ip_clear") end
-
----@ffi
----@return table
-function OEmtGetAccounts() return call("accounts") end
-
----@ffi
----@param steamid string
----@param label string
----@return table
-function OEmtSetAccountLabel(steamid, label) return call("account_label", steamid, label) end
-
----@ffi
----@param folders_json string
----@return table
-function OEmtSaveAccountFolders(folders_json) return call("account_folders", folders_json) end
-
----@ffi
----@param steamid string
----@param state string
----@param launch_appid string
----@return table
-function OEmtSwitchAccount(steamid, state, launch_appid) return call("account_switch", steamid, state, launch_appid) end
-
----@ffi
----@return table
-function OEmtTakePendingLaunch() return call("account_pending_launch") end
 
 ---@ffi
 ---@param level string

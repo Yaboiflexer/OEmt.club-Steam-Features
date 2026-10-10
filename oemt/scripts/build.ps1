@@ -57,6 +57,7 @@ if (-not $SkipTests) {
     Step 'Tests'
     Run 'ctest' { ctest --test-dir build --output-on-failure --timeout 120 }
     Run 'OEmt Lua tests' { .\build\luajit.exe oemt\tests\lua\run.lua }
+    Run 'OEmt frontend logic tests' { bun test oemt\tests\ts }
 }
 
 # --- package ----------------------------------------------------------------------------------

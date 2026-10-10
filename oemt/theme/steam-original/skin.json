@@ -1,0 +1,8 @@
+{
+    "name": "Steam (original)",
+    "author": "Valve (no changes)",
+    "description": "Steam's own look, untouched. Pick this to go back to stock Steam; pick OEmt.club to switch back.",
+    "version": "1.0.0",
+    "UseDefaultPatches": false,
+    "Patches": []
+}

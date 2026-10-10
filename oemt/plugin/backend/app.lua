@@ -13,7 +13,6 @@ local Sessions     = require("modules.sessions")
 local integrations = require("modules.integrations")
 local diagnostics  = require("modules.diagnostics")
 local IpLog        = require("modules.ip_log")
-local Accounts     = require("modules.accounts")
 
 local M = {}
 
@@ -138,31 +137,6 @@ function M.new(services)
         end,
     })
 
-    -- Account Center (TcNo, opt-in via integrations.tcno.enabled)
-    local function json_store(name)
-        if not (data_dir and data_ok) then return nil end
-        local p = util.join(data_dir, name)
-        return {
-            load = function() return services.read_file(p) end,
-            save = function(text) return util.write_file_atomic(p, text) end,
-            clear = function() os.remove(p) end,
-        }
-    end
-    app.accounts = Accounts.new({
-        steam_path = services.steam_path, read_file = services.read_file, exists = services.exists,
-        getenv = services.getenv, exec = services.exec, clock = services.clock, log = app.log,
-        store_labels = json_store("account_labels.json"), store_pending = json_store("pending_launch.json"),
-    })
-    app.registry:register({
-        id = "accounts", name = "Account Center", version = M.VERSION, deps = { "config" },
-        init = function() app.accounts:load() end,
-        health = function()
-            local list, err = app.accounts:list()
-            if err then return { status = "degraded", detail = err } end
-            return { status = "ok", detail = #list .. " remembered account(s); TcNo " .. (app.accounts:tcno_path() and "found" or "not found") }
-        end,
-    })
-
     -- Integrations (detection only in Phase 1)
     app.integrations = integrations.module({ getenv = services.getenv, exists = services.exists, platform = services.platform })
     app.registry:register(app.integrations)
@@ -178,26 +152,6 @@ end
 
 -- API -----------------------------------------------------------------------
 -- Every call returns { ok = true, data = ... } or { ok = false, error = "..." } and is timed.
-
-local function recent_games(app, limit)
-    local lib = app.library.state.last
-    if not lib then return util.array() end
-    local stats = app.sessions:stats_by_app()
-    local list = {}
-    for _, a in ipairs(lib.apps) do
-        local s = stats[a.appid]
-        local last = math.max(a.last_played or 0, s and s.last_at or 0)
-        if last > 0 then
-            list[#list + 1] = { appid = a.appid, name = a.name, last_played = last,
-                                oemt_sessions = s and s.sessions or 0, oemt_total_s = s and s.total_s or 0,
-                                installed = a.installed, files_present = a.files_present }
-        end
-    end
-    table.sort(list, function(x, y) return x.last_played > y.last_played end)
-    local out = {}
-    for i = 1, math.min(limit, #list) do out[i] = list[i] end
-    return util.array(out)
-end
 
 function M.attach_api(app)
     local api = {}
@@ -222,45 +176,14 @@ function M.attach_api(app)
 
     wrap("overview", function()
         local lib = app.library.state.last
-        local detected = 0
-        for _, i in ipairs(app.integrations.list(app.ctx)) do if i.detection.installed then detected = detected + 1 end end
         return {
             version = M.VERSION, millennium_version = app.services.millennium_version,
             health = caps.overall(app.checks), checks = app.checks,
             library = lib and { apps = #lib.apps, libraries = #lib.libraries, warnings = #lib.warnings, scanned_at = lib.scanned_at } or nil,
             active_sessions = app.sessions:active_list(),
-            recent = recent_games(app, 8),
-            integrations_detected = detected,
             settings = { accent = app.config:get("ui.accent"), reduced_motion = app.config:get("ui.reduced_motion"),
                          default_tab = app.config:get("ui.default_tab"), open_on_start = app.config:get("ui.open_on_start") },
         }
-    end)
-
-    wrap("library", function(refresh)
-        local res, st = app.library.get(app.ctx, refresh == true)
-        if not res then error(st.last_error or "library scan failed") end
-        return { libraries = res.libraries, apps = res.apps, warnings = res.warnings, scanned_at = res.scanned_at, scan_ms = st.last_ms }
-    end)
-
-    --- Validate before the frontend asks Steam to launch. Steam does the actual launch.
-    wrap("prepare_launch", function(appid)
-        appid = tostring(appid or "")
-        if not appid:match("^%d+$") then return { allowed = false, reason = "Invalid app id" } end
-        local a = app.library.find(appid)
-        if not a then return { allowed = false, reason = "Game is not in the scanned library. Refresh the library and try again." } end
-        if a.files_present == false then
-            return { allowed = false, reason = "Game files were not found at the expected location. Verify the game in Steam." }
-        end
-        if not a.installed then
-            return { allowed = true, warning = "Steam reports this game is not fully installed; Steam will handle the update/install.", url = "steam://rungameid/" .. appid }
-        end
-        return { allowed = true, url = "steam://rungameid/" .. appid }
-    end)
-
-    wrap("record_launch", function(appid, outcome, detail)
-        local allowed = { requested = true, started = true, failed = true, no_start_detected = true }
-        if not allowed[outcome] then error("unknown launch outcome") end
-        return app.sessions:record_launch(appid, outcome, detail)
     end)
 
     wrap("session_event", function(appid, instance, running)
@@ -345,41 +268,6 @@ function M.attach_api(app)
         local ok, err = app.ip_log:clear()
         if not ok then error(err) end
         return true
-    end)
-
-    -- Account Center
-    local function tcno_enabled() return app.config:get("integrations.tcno.enabled") == true end
-
-    wrap("accounts", function()
-        local list, err = app.accounts:list()
-        return { accounts = list, error = err, folders = app.accounts:get_folders(),
-                 tcno_found = app.accounts:tcno_path() ~= nil, enabled = tcno_enabled(),
-                 states = util.array({ "online", "away", "invisible", "busy", "offline" }) }
-    end)
-
-    wrap("account_label", function(steamid, label)
-        local ok, err = app.accounts:set_label(steamid, label)
-        if not ok then error(err) end
-        return true
-    end)
-
-    wrap("account_folders", function(folders_json)
-        local list = json.decode(tostring(folders_json or ""))
-        local ok, err = app.accounts:set_folders(list)
-        if not ok then error(err) end
-        return app.accounts:get_folders()
-    end)
-
-    wrap("account_switch", function(steamid, state, launch_appid)
-        if not tcno_enabled() then error("Turn on the TcNo integration first (Integrations tab)") end
-        if #app.sessions:active_list() > 0 then error("A game is running. Close it before switching accounts; switching restarts Steam.") end
-        local res, err = app.accounts:switch(steamid, { state = state, launch_appid = launch_appid })
-        if not res then error(err) end
-        return res
-    end)
-
-    wrap("account_pending_launch", function()
-        return app.accounts:take_pending_launch() or { none = true }
     end)
 
     wrap("frontend_log", function(level, event, message)

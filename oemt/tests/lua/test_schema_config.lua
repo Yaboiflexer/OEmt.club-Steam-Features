@@ -95,3 +95,28 @@ T.test("reset restores defaults", function()
     T.truthy(c:reset()); T.eq(c:get("ui.accent"), "#577999")
     T.falsy(c:reset("missing"))
 end)
+
+T.test("old default_tab values are migrated, not reset", function()
+    local schema = require("core.schema")
+    T.eq(select(2, schema.check("ui.default_tab", "netsessions")), "sessions")
+    T.eq(select(2, schema.check("ui.default_tab", "network")), "sessions")
+    T.eq(select(2, schema.check("ui.default_tab", "performance")), "diagnostics")
+    T.eq(select(2, schema.check("ui.default_tab", "accounts")), "sessions", "Accounts moved to a separate build")
+    T.eq(select(2, schema.check("ui.default_tab", "home")), "sessions", "Home removed")
+    T.eq(select(2, schema.check("ui.default_tab", "library")), "sessions", "OEmt Library removed")
+    T.eq(select(2, schema.check("ui.default_tab", "sessions")), "sessions")
+    T.falsy(schema.check("ui.default_tab", "bogus"))
+end)
+
+T.test("start page accepts OEmt tabs and Steam pages, each with a readable label", function()
+    local schema = require("core.schema")
+    local f = schema.fields["ui.default_tab"]
+    for _, v in ipairs(f.values) do
+        T.truthy(schema.check("ui.default_tab", v), v)
+        T.truthy(f.labels[v], "label for " .. v)
+    end
+    T.truthy(schema.check("ui.default_tab", "steam_store"))
+    local described
+    for _, d in ipairs(schema.describe()) do if d.key == "ui.default_tab" then described = d end end
+    T.eq(described.labels.steam_library, "Steam Library", "labels reach the UI")
+end)

@@ -74,15 +74,13 @@ T.test("save failures are surfaced", function()
     T.eq(s.save_error, "read-only")
 end)
 
-T.test("stats aggregate per app and launches are recorded", function()
+T.test("each instance becomes its own history entry with a duration", function()
     local t = 0
     local s = Sessions.new({ clock = function() t = t + 100 return t end })
     s:on_lifetime(7, 1, true); s:on_lifetime(7, 1, false)
     s:on_lifetime(7, 2, true); s:on_lifetime(7, 2, false)
-    local st = s:stats_by_app()["7"]
-    T.eq(st.sessions, 2); T.eq(st.total_s, 200)
-    s:record_launch("7", "requested")
-    T.eq(s.launches[1].outcome, "requested")
+    T.eq(#s.history, 2)
+    T.eq(s.history[1].duration_s, 100); T.eq(s.history[2].duration_s, 100)
 end)
 
 T.test("saved file is valid JSON in the expected format", function()

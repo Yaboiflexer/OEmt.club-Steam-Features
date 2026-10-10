@@ -6,11 +6,6 @@ export class ApiError extends Error {}
 export type CheckStatus = 'pass' | 'warn' | 'fail';
 export interface Check { id: string; label: string; status: CheckStatus; detail: string }
 
-export interface RecentGame {
-	appid: string; name: string; last_played: number;
-	oemt_sessions: number; oemt_total_s: number; installed: boolean; files_present?: boolean;
-}
-
 export interface Session {
 	id: number; appid: string; instance: number; name?: string;
 	started_at: number; ended_at?: number; duration_s?: number;
@@ -20,18 +15,9 @@ export interface Session {
 export interface Overview {
 	version: string; millennium_version: string; health: CheckStatus; checks: Check[];
 	library?: { apps: number; libraries: number; warnings: number; scanned_at: number };
-	active_sessions: Session[]; recent: RecentGame[]; integrations_detected: number;
+	active_sessions: Session[];
 	settings: { accent: string; reduced_motion: boolean; default_tab: string; open_on_start: boolean };
 }
-
-export interface LibraryApp {
-	appid: string; name: string; installdir?: string; installed: boolean; update_required: boolean;
-	size_bytes: number; last_updated: number; last_played: number; library: string; files_present?: boolean;
-}
-export interface LibraryFolder { index: string; path: string; label: string; app_count: number; available: boolean; error?: string }
-export interface Library { libraries: LibraryFolder[]; apps: LibraryApp[]; warnings: string[]; scanned_at: number; scan_ms?: number }
-
-export interface LaunchCheck { allowed: boolean; reason?: string; warning?: string; url?: string }
 
 export interface SessionsData { active: Session[]; history: Session[]; enabled: boolean; interrupted_on_load?: number }
 
@@ -45,7 +31,7 @@ export interface Integration {
 export type SettingType = 'bool' | 'int' | 'enum' | 'color' | 'string';
 export interface SettingField {
 	key: string; type: SettingType; default: unknown; min?: number; max?: number;
-	values?: string[]; label: string; group: string;
+	values?: string[]; labels?: Record<string, string>; label: string; group: string;
 }
 export interface ConfigIssue { key: string; problem: string; action?: string }
 export interface SettingsData { values: Record<string, unknown>; schema: SettingField[]; issues: ConfigIssue[] }
@@ -78,13 +64,6 @@ export interface IpLogData {
 	last_error?: string; save_error?: string; load_error?: string;
 }
 
-export interface SteamAccount {
-	steamid: string; persona_name: string; account_masked: string; most_recent: boolean;
-	remembered: boolean; offline_mode: boolean; last_login: number; label?: string;
-}
-export interface AccountFolder { id: string; name: string; accounts: string[]; collapsed?: boolean }
-export interface AccountsData { accounts: SteamAccount[]; folders: AccountFolder[]; error?: string; tcno_found: boolean; enabled: boolean; states: string[] }
-
 export interface SelfTest { passed: number; total: number; ran_at: string; results: { name: string; ok: boolean; detail: string; duration_ms: number }[] }
 
 /** Millennium's Lua->JSON bridge can emit an empty Lua table as {} where an array is expected. */
@@ -114,15 +93,8 @@ async function call<T>(name: string, p: Promise<unknown>): Promise<T> {
 export const api = {
 	async overview(): Promise<Overview> {
 		const o = await call<Overview>('overview', backend.OEmtGetOverview());
-		return { ...o, checks: arr(o.checks), active_sessions: arr(o.active_sessions), recent: arr(o.recent) };
+		return { ...o, checks: arr(o.checks), active_sessions: arr(o.active_sessions) };
 	},
-	async library(refresh = false): Promise<Library> {
-		const l = await call<Library>('library', backend.OEmtGetLibrary(refresh));
-		return { ...l, apps: arr(l.apps), libraries: arr(l.libraries), warnings: arr(l.warnings) };
-	},
-	prepareLaunch: (appid: string) => call<LaunchCheck>('prepare_launch', backend.OEmtPrepareLaunch(appid)),
-	recordLaunch: (appid: string, outcome: 'requested' | 'started' | 'failed' | 'no_start_detected', detail = '') =>
-		call<unknown>('record_launch', backend.OEmtRecordLaunch(appid, outcome, detail)),
 	sessionEvent: (appid: number, instance: number, running: boolean) =>
 		call<{ tracked: boolean; reason?: string }>('session_event', backend.OEmtSessionEvent(appid, instance, running)),
 	async sessions(limit = 100): Promise<SessionsData> {
@@ -168,24 +140,6 @@ export const api = {
 	checkIp: (reason: 'startup' | 'auto' | 'manual' | 'session_start', appid = '') =>
 		call<{ ip?: string; changed?: boolean; skipped?: boolean; session?: IpSession }>('ip_check', backend.OEmtCheckIp(reason, appid)),
 	clearIpLog: () => call<boolean>('ip_clear', backend.OEmtClearIpLog()),
-	async accounts(): Promise<AccountsData> {
-		const d = await call<AccountsData>('accounts', backend.OEmtGetAccounts());
-		return {
-			...d,
-			accounts: arr(d.accounts),
-			states: arr(d.states),
-			folders: arr<AccountFolder>(d.folders).map((f) => ({ ...f, accounts: arr(f.accounts) })),
-		};
-	},
-	async saveAccountFolders(folders: AccountFolder[]): Promise<AccountFolder[]> {
-		const saved = arr<AccountFolder>(await call<unknown>('account_folders', backend.OEmtSaveAccountFolders(JSON.stringify(folders))));
-		return saved.map((f) => ({ ...f, accounts: arr(f.accounts) }));
-	},
-	setAccountLabel: (steamid: string, label: string) => call<boolean>('account_label', backend.OEmtSetAccountLabel(steamid, label)),
-	switchAccount: (steamid: string, state: string, launchAppid: string) =>
-		call<{ started: boolean }>('account_switch', backend.OEmtSwitchAccount(steamid, state, launchAppid)),
-	takePendingLaunch: () =>
-		call<{ appid?: string; expired?: boolean; wrong_account?: boolean; none?: boolean }>('account_pending_launch', backend.OEmtTakePendingLaunch()),
 	exportDiagnostics: (frontendInfo: object) => call<string>('export_diagnostics', backend.OEmtExportDiagnostics(JSON.stringify(frontendInfo))),
 	/** Fire-and-forget; logging must never throw into the UI. */
 	log(level: LogLevel, event: string, message: string) {

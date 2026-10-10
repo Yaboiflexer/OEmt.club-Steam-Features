@@ -1,0 +1,13 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+	<!-- OEmt mark: ring split by a horizontal slit on the left, four-point star in the centre.
+	     White version for dark surfaces (title bar); logo.svg is the dark version. -->
+	<defs>
+		<mask id="slit">
+			<rect width="512" height="512" fill="#fff"/>
+			<rect x="0" y="243" width="200" height="26" fill="#000"/>
+		</mask>
+	</defs>
+	<circle cx="256" cy="256" r="168" stroke="#ffffff" stroke-width="72" mask="url(#slit)"/>
+	<rect x="12" y="252" width="128" height="8" rx="4" fill="#ffffff"/>
+	<path d="M256 168 L276 236 L344 256 L276 276 L256 344 L236 276 L168 256 L236 236 Z" fill="#ffffff"/>
+</svg>

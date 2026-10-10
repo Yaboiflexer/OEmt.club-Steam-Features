@@ -31,11 +31,16 @@ M.fields = {
 
     ["ui.accent"]            = { type = "color", default = "#577999", label = "Accent color when the OEmt.club theme is off (theme colors are set in the theme's settings)", group = "appearance" },
     ["ui.reduced_motion"]    = { type = "bool", default = false, label = "Reduce motion", group = "appearance" },
-    ["ui.topbar_items"]      = { type = "string", max_len = 300, default = "home,accounts,netsessions,settings,diagnostics",
+    ["ui.topbar_items"]      = { type = "string", max_len = 300, default = "sessions,settings",
                                  label = "Items in Steam's top bar (comma-separated; empty = none)", group = "topbar" },
     ["ui.open_on_start"]     = { type = "bool", default = true, label = "Open OEmt.club when Steam starts", group = "appearance" },
-    ["ui.default_tab"]       = { type = "enum", values = { "home", "accounts", "netsessions", "settings", "diagnostics", "library", "integrations", "sessions", "network", "performance" },
-                                 default = "home", label = "Open on tab", group = "appearance" },
+    -- Start page: an OEmt tab or one of Steam's own pages (opened through Steam's steam:// links).
+    ["ui.default_tab"]       = { type = "enum", values = { "sessions", "settings", "diagnostics", "integrations",
+                                                           "steam_store", "steam_library", "steam_community", "steam_profile" },
+                                 labels = { sessions = "Sessions", settings = "Settings", diagnostics = "Diagnostics",
+                                            integrations = "Integrations", steam_store = "Steam Store", steam_library = "Steam Library",
+                                            steam_community = "Steam Community", steam_profile = "My Steam profile" },
+                                 default = "sessions", label = "Start page when Steam opens", group = "appearance" },
 
     -- Integrations are opt-in. Phase 1 performs detection only; enabling records consent for later phases.
     ["integrations.discord.enabled"]    = { type = "bool", default = false, label = "Discord", group = "integrations" },
@@ -44,6 +49,19 @@ M.fields = {
     ["integrations.tcno.enabled"]       = { type = "bool", default = false, label = "TcNo Account Switcher", group = "integrations" },
     ["integrations.insights.enabled"]   = { type = "bool", default = false, label = "Insights.gg", group = "integrations" },
 }
+
+-- Values renamed in later versions: old -> new. Applied by check(), so loading, setting and importing
+-- all accept the old value and store the new one.
+M.migrations = {
+    ["ui.default_tab"] = { netsessions = "sessions", network = "sessions", performance = "diagnostics",
+                         accounts = "sessions", home = "sessions", library = "sessions" },
+}
+
+function M.migrate(key, value)
+    local m = M.migrations[key]
+    if m and type(value) == "string" and m[value] then return m[value] end
+    return value
+end
 
 function M.defaults()
     local out = {}
@@ -55,6 +73,7 @@ end
 function M.check(key, value)
     local f = M.fields[key]
     if not f then return false, "unknown setting" end
+    value = M.migrate(key, value)
     local t = f.type
     if t == "bool" then
         if type(value) == "boolean" then return true, value end
@@ -91,7 +110,7 @@ function M.describe()
     for _, k in ipairs(keys) do
         local f = M.fields[k]
         out[#out + 1] = { key = k, type = f.type, default = f.default, min = f.min, max = f.max,
-                          values = f.values, label = f.label, group = f.group }
+                          values = f.values, labels = f.labels, label = f.label, group = f.group }
     end
     return out
 end

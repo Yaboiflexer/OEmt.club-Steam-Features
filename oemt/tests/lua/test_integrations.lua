@@ -24,8 +24,8 @@ T.test("detects installed apps from standard locations only", function()
     T.falsy(by.discord.enabled, "integrations are opt-in")
 end)
 
--- Only capabilities that are actually implemented may say "available" (TcNo: Account Center, Phase 2).
-local IMPLEMENTED = { ["tcno.list_accounts"] = true, ["tcno.switch_steam"] = true, ["tcno.switch_and_launch"] = true }
+-- Only capabilities that are actually implemented may say "available". (TcNo account switching moved to a separate build.)
+local IMPLEMENTED = {}
 
 T.test("only implemented capabilities claim to be available", function()
     for _, def in ipairs(integ.DEFINITIONS) do

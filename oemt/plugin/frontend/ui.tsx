@@ -20,26 +20,9 @@ export function fmtBytes(n?: number): string {
 	return `${n.toFixed(i >= 3 ? 1 : 0)} ${u[i]}`;
 }
 
-/** Unix seconds -> "Today", "Yesterday", "3 days ago", or a date. */
-export function fmtWhen(unix?: number): string {
-	if (!unix) return 'Never';
-	const d = new Date(unix * 1000), now = new Date();
-	const days = Math.floor((new Date(now.toDateString()).getTime() - new Date(d.toDateString()).getTime()) / 86400000);
-	if (days <= 0) return 'Today';
-	if (days === 1) return 'Yesterday';
-	if (days < 7) return `${days} days ago`;
-	return d.toLocaleDateString();
-}
-
 export function fmtTime(unix?: number): string {
 	return unix ? new Date(unix * 1000).toLocaleString() : '—';
 }
-
-/** Steam's public CDN artwork. Missing art falls back to the gradient behind the <img>. */
-export const art = {
-	hero: (appid: string) => `https://cdn.cloudflare.steamstatic.com/steam/apps/${appid}/library_hero.jpg`,
-	header: (appid: string) => `https://cdn.cloudflare.steamstatic.com/steam/apps/${appid}/header.jpg`,
-};
 
 // ---- small components -----------------------------------------------------------------------
 
@@ -76,13 +59,6 @@ export function Stat(props: { k: string; v: ReactNode; title?: string }) {
 
 export function Empty(props: { children: ReactNode }) {
 	return <div className="oemt-empty">{props.children}</div>;
-}
-
-export function Art(props: { src: string; alt: string; className?: string }) {
-	const [failed, setFailed] = useState(false);
-	useEffect(() => setFailed(false), [props.src]);
-	if (failed) return null;
-	return <img className={props.className} src={props.src} alt={props.alt} loading="lazy" onError={() => setFailed(true)} />;
 }
 
 export function ErrorText(props: { error: unknown }) {
@@ -155,3 +131,4 @@ export class ErrorBoundary extends Component<{ name: string; children?: ReactNod
 		);
 	}
 }
+

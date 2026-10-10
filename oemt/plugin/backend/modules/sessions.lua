@@ -14,7 +14,7 @@ function M.new(opts)
         lookup_name = opts.lookup_name or function() return nil end,
         active = {},      -- key "appid:instance" -> session
         history = {},     -- newest last
-        next_id = 1, launches = {}, load_error = nil, save_error = nil, interrupted_on_load = 0,
+        next_id = 1, load_error = nil, save_error = nil, interrupted_on_load = 0,
     }
     return setmetatable(self, { __index = M })
 end
@@ -115,17 +115,6 @@ function M:on_lifetime(appid, instance, running)
     return s
 end
 
-function M:record_launch(appid, outcome, detail)
-    local entry = { appid = tostring(appid), at = self.clock(), outcome = tostring(outcome), detail = detail }
-    self.launches[#self.launches + 1] = entry
-    if #self.launches > 50 then table.remove(self.launches, 1) end
-    if self.log then
-        self.log:log(outcome == "failed" and "error" or "info",
-            { module = "sessions", event = "launch", outcome = entry.outcome, data = { appid = entry.appid }, msg = detail })
-    end
-    return entry
-end
-
 function M:active_list()
     local out = {}
     for _, s in pairs(self.active) do
@@ -147,20 +136,6 @@ function M:history_list(limit, appid)
         end
     end
     return util.array(out)
-end
-
---- Per-game aggregates from OEmt's own history.
-function M:stats_by_app()
-    local agg = {}
-    for _, s in ipairs(self.history) do
-        local a = agg[s.appid] or { appid = s.appid, name = s.name, sessions = 0, total_s = 0, last_at = 0 }
-        a.sessions = a.sessions + 1
-        a.total_s = a.total_s + (s.duration_s or 0)
-        a.last_at = math.max(a.last_at, s.ended_at or s.started_at)
-        if s.name then a.name = s.name end
-        agg[s.appid] = a
-    end
-    return agg
 end
 
 function M:clear_history()

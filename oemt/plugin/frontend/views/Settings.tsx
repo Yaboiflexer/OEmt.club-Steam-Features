@@ -28,7 +28,7 @@ const Field: FC<{ field: SettingField; value: unknown; onSave: (v: unknown) => P
 		case 'enum':
 			return (
 				<select className="oemt-select" value={String(value)} onChange={(e) => onSave(e.target.value)}>
-					{(field.values ?? []).map((v) => <option key={v} value={v}>{v}</option>)}
+					{(field.values ?? []).map((v) => <option key={v} value={v}>{field.labels?.[v] ?? v}</option>)}
 				</select>
 			);
 		case 'color':

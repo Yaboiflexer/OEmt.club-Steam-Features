@@ -1,6 +1,7 @@
-import { FC, useState } from 'react';
+import { FC, useEffect, useRef, useState } from 'react';
 import { api, LogLevel, SelfTest } from '../api';
 import { useShell } from '../shell';
+import { getIntegration, listenerCount, subscribeNav } from '../nav';
 import { PerformanceView } from './Performance';
 import { Empty, ErrorText, Panel, Pill, Tone, useAsync } from '../ui';
 
@@ -50,6 +51,12 @@ export const DiagnosticsView: FC = () => {
 			setBundleNote(`Export failed: ${String((err as Error)?.message ?? err)}`);
 		}
 	}
+
+	// Old "Performance" links land here (/oemt/performance -> Diagnostics › performance).
+	const perfRef = useRef<HTMLHeadingElement>(null);
+	useEffect(() => {
+		if (shell.route.tab === 'diagnostics' && shell.route.sub === 'performance') perfRef.current?.scrollIntoView({ block: 'start' });
+	}, [shell.route.seq]); // eslint-disable-line react-hooks/exhaustive-deps
 
 	const d = diag.data;
 
@@ -107,7 +114,9 @@ export const DiagnosticsView: FC = () => {
 				</Panel>
 			)}
 
-			<h3 className="oemt-label" style={{ marginTop: 6 }}>Performance</h3>
+			<SteamIntegrationPanel />
+
+			<h3 ref={perfRef} className="oemt-label" style={{ marginTop: 6 }}>Performance</h3>
 			<PerformanceView />
 
 			<Panel label="Logs" right={
@@ -144,5 +153,42 @@ export const DiagnosticsView: FC = () => {
 				)}
 			</Panel>
 		</div>
+	);
+};
+
+const OPEN_REASON: Record<string, string> = {
+	ok: 'Opened in the main window',
+	no_main_window: 'Steam\'s main window never appeared',
+	no_window: 'No window could be navigated',
+	not_shown: 'Steam replaced the page with its own start page',
+	backend_unavailable: 'Backend unavailable at startup',
+};
+const TOPBAR_REASON: Record<string, string> = {
+	ok: 'In Steam\'s top bar',
+	no_items: 'No items chosen (Settings › Top bar)',
+	no_main_window: 'Waiting for Steam\'s main window',
+	no_nav_row: 'Steam\'s top bar not recognised; OEmt shows its own menu instead',
+	starting: 'Starting',
+};
+
+/** How OEmt is attached to Steam's main window. Live: re-renders when the integration state changes. */
+const SteamIntegrationPanel: FC = () => {
+	const [, force] = useState(0);
+	useEffect(() => subscribeNav(() => force((n) => n + 1)), []);
+	const s = getIntegration();
+	const open = s.openOnStart;
+	return (
+		<Panel label="Steam integration">
+			<table className="oemt-table">
+				<tbody>
+					<tr><td>Main window</td><td><Pill tone={s.mainWindow ? 'pass' : 'warn'}>{s.mainWindow ? 'Found' : 'Not found'}</Pill></td></tr>
+					<tr><td>Top bar</td><td><Pill tone={s.topbar.mode === 'injected' ? 'pass' : s.topbar.mode === 'fallback' ? 'warn' : 'neutral'}>{s.topbar.mode}</Pill> <span className="oemt-muted">{TOPBAR_REASON[s.topbar.reason] ?? s.topbar.reason}{s.topbar.method ? ` · ${s.topbar.method}` : ''}</span></td></tr>
+					<tr><td>Open on start</td><td>{open ? <><Pill tone={open.ok ? 'pass' : 'fail'}>{open.ok ? 'ok' : 'failed'}</Pill> <span className="oemt-muted">{OPEN_REASON[open.reason] ?? open.reason} · attempt {open.attempts} · {new Date(open.at).toLocaleTimeString()}</span></> : <span className="oemt-muted">Off or not run yet</span>}</td></tr>
+					<tr><td>Routes</td><td><Pill tone={s.routes.length === 1 ? 'pass' : 'warn'}>{s.routes.length}</Pill> <span className="oemt-muted">{s.routes.join(', ') || 'none'}</span></td></tr>
+					<tr><td>Top bar ids dropped</td><td><span className="oemt-muted">{s.droppedTopbarIds.length ? s.droppedTopbarIds.join(', ') : 'none (no duplicates)'}</span></td></tr>
+					<tr><td>Navigation listeners</td><td><span className="oemt-muted">{listenerCount()}</span></td></tr>
+				</tbody>
+			</table>
+		</Panel>
 	);
 };
