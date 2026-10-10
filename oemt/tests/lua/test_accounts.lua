@@ -100,6 +100,27 @@ T.test("switch-then-launch hands the game over once, to the right account only",
 	T.eq(make({ pending = pending, now = 1000 + Accounts.PENDING_TTL_S + 1 }):take_pending_launch().expired, true)
 end)
 
+T.test("folders save, reload, and are validated", function()
+	local labels = mem()
+	local acc = make({ labels = labels })
+	T.truthy(acc:set_folders({
+		{ id = "f1", name = "Comp\n", accounts = { "76561198000000001", "bogus" } },
+		{ id = "f2", name = "", accounts = { "76561198000000001", "76561198000000002" }, collapsed = true },
+	}))
+	local again = make({ labels = labels })
+	local f = again:get_folders()
+	T.eq(#f, 2); T.eq(f[1].name, "Comp"); T.eq(#f[1].accounts, 1)
+	T.eq(f[2].name, "Folder", "empty names get a default")
+	T.eq(#f[2].accounts, 1, "an account lives in one folder only"); T.eq(f[2].accounts[1], "76561198000000002")
+	T.eq(f[2].collapsed, true)
+	T.falsy(acc:set_folders({ { id = "bad id!", name = "x" } }))
+	T.falsy(acc:set_folders({ { id = "a" }, { id = "a" } }), "duplicate ids rejected")
+	T.falsy(acc:set_folders("nope"))
+	-- labels keep working alongside folders
+	T.truthy(again:set_label("76561198000000002", "alt"))
+	T.eq(#make({ labels = labels }):get_folders(), 2)
+end)
+
 T.test("labels persist and are sanitised", function()
 	local labels = mem()
 	local acc = make({ labels = labels })

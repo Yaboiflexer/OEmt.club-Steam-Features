@@ -120,6 +120,11 @@ function OEmtGetAccounts() return call("accounts") end
 function OEmtSetAccountLabel(steamid, label) return call("account_label", steamid, label) end
 
 ---@ffi
+---@param folders_json string
+---@return table
+function OEmtSaveAccountFolders(folders_json) return call("account_folders", folders_json) end
+
+---@ffi
 ---@param steamid string
 ---@param state string
 ---@param launch_appid string

@@ -82,7 +82,8 @@ export interface SteamAccount {
 	steamid: string; persona_name: string; account_masked: string; most_recent: boolean;
 	remembered: boolean; offline_mode: boolean; last_login: number; label?: string;
 }
-export interface AccountsData { accounts: SteamAccount[]; error?: string; tcno_found: boolean; enabled: boolean; states: string[] }
+export interface AccountFolder { id: string; name: string; accounts: string[]; collapsed?: boolean }
+export interface AccountsData { accounts: SteamAccount[]; folders: AccountFolder[]; error?: string; tcno_found: boolean; enabled: boolean; states: string[] }
 
 export interface SelfTest { passed: number; total: number; ran_at: string; results: { name: string; ok: boolean; detail: string; duration_ms: number }[] }
 
@@ -169,7 +170,16 @@ export const api = {
 	clearIpLog: () => call<boolean>('ip_clear', backend.OEmtClearIpLog()),
 	async accounts(): Promise<AccountsData> {
 		const d = await call<AccountsData>('accounts', backend.OEmtGetAccounts());
-		return { ...d, accounts: arr(d.accounts), states: arr(d.states) };
+		return {
+			...d,
+			accounts: arr(d.accounts),
+			states: arr(d.states),
+			folders: arr<AccountFolder>(d.folders).map((f) => ({ ...f, accounts: arr(f.accounts) })),
+		};
+	},
+	async saveAccountFolders(folders: AccountFolder[]): Promise<AccountFolder[]> {
+		const saved = arr<AccountFolder>(await call<unknown>('account_folders', backend.OEmtSaveAccountFolders(JSON.stringify(folders))));
+		return saved.map((f) => ({ ...f, accounts: arr(f.accounts) }));
 	},
 	setAccountLabel: (steamid: string, label: string) => call<boolean>('account_label', backend.OEmtSetAccountLabel(steamid, label)),
 	switchAccount: (steamid: string, state: string, launchAppid: string) =>

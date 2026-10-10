@@ -29,5 +29,6 @@ declare const backend: {
 	OEmtSetAccountLabel(steamid: string, label: string): FfiResult;
 	OEmtSwitchAccount(steamid: string, state: string, launch_appid: string): FfiResult;
 	OEmtTakePendingLaunch(): FfiResult;
+	OEmtSaveAccountFolders(folders_json: string): FfiResult;
 	OEmtFrontendLog(level: string, event: string, message: string): FfiResult;
 };

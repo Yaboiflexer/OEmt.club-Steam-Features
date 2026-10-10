@@ -31,18 +31,62 @@ function M.new(deps)
     self.d = deps
     self.clock = deps.clock or os.time
     self.labels = {}
+    self.folders = {} -- { id, name, accounts = { steamid... }, collapsed }
     return self
+end
+
+M.MAX_FOLDERS = 50
+
+--- Validate a folder layout from the UI. Returns a clean copy or nil, error.
+function M.clean_folders(list)
+    if type(list) ~= "table" then return nil, "folders must be a list" end
+    if #list > M.MAX_FOLDERS then return nil, "too many folders (max " .. M.MAX_FOLDERS .. ")" end
+    local out, seen_ids, placed = {}, {}, {}
+    for _, f in ipairs(list) do
+        if type(f) ~= "table" then return nil, "invalid folder" end
+        local id = tostring(f.id or "")
+        if not id:match("^[%w%-]+$") or #id > 40 or seen_ids[id] then return nil, "invalid folder id" end
+        seen_ids[id] = true
+        local name = tostring(f.name or ""):gsub("[%c]", ""):sub(1, 40)
+        if name == "" then name = "Folder" end
+        local accounts = {}
+        for _, sid in ipairs(type(f.accounts) == "table" and f.accounts or {}) do
+            sid = tostring(sid)
+            if valid_steamid(sid) and not placed[sid] then
+                placed[sid] = true
+                accounts[#accounts + 1] = sid
+            end
+        end
+        out[#out + 1] = { id = id, name = name, accounts = util.array(accounts), collapsed = f.collapsed == true }
+    end
+    return out
 end
 
 function M:load()
     local s = self.d.store_labels
     local text = s and s.load()
     local doc = text and json.decode(text)
-    if type(doc) == "table" and doc.format == "oemt-account-labels" and type(doc.labels) == "table" then
-        for id, label in pairs(doc.labels) do
+    if type(doc) == "table" and doc.format == "oemt-account-labels" then
+        for id, label in pairs(type(doc.labels) == "table" and doc.labels or {}) do
             if valid_steamid(id) and type(label) == "string" then self.labels[id] = label:sub(1, 40) end
         end
+        self.folders = M.clean_folders(doc.folders or {}) or {}
     end
+end
+
+function M:_save()
+    local s = self.d.store_labels
+    if not s then return true end
+    return s.save(json.encode({ format = "oemt-account-labels", version = 2, labels = self.labels, folders = util.array(self.folders) }))
+end
+
+function M:get_folders() return util.array(self.folders) end
+
+function M:set_folders(list)
+    local clean, err = M.clean_folders(list)
+    if not clean then return false, err end
+    self.folders = clean
+    return self:_save()
 end
 
 function M:tcno_path()
@@ -93,9 +137,7 @@ function M:set_label(steamid, label)
     if not valid_steamid(steamid) then return false, "invalid account id" end
     label = tostring(label or ""):gsub("[%c]", ""):sub(1, 40)
     self.labels[steamid] = label ~= "" and label or nil
-    local s = self.d.store_labels
-    if not s then return true end
-    return s.save(json.encode({ format = "oemt-account-labels", version = 1, labels = self.labels }))
+    return self:_save()
 end
 
 --- Start TcNo to switch Steam to `steamid`. opts: { state = "online"|..., launch_appid = "730" }

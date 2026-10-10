@@ -352,7 +352,8 @@ function M.attach_api(app)
 
     wrap("accounts", function()
         local list, err = app.accounts:list()
-        return { accounts = list, error = err, tcno_found = app.accounts:tcno_path() ~= nil, enabled = tcno_enabled(),
+        return { accounts = list, error = err, folders = app.accounts:get_folders(),
+                 tcno_found = app.accounts:tcno_path() ~= nil, enabled = tcno_enabled(),
                  states = util.array({ "online", "away", "invisible", "busy", "offline" }) }
     end)
 
@@ -360,6 +361,13 @@ function M.attach_api(app)
         local ok, err = app.accounts:set_label(steamid, label)
         if not ok then error(err) end
         return true
+    end)
+
+    wrap("account_folders", function(folders_json)
+        local list = json.decode(tostring(folders_json or ""))
+        local ok, err = app.accounts:set_folders(list)
+        if not ok then error(err) end
+        return app.accounts:get_folders()
     end)
 
     wrap("account_switch", function(steamid, state, launch_appid)

@@ -122,6 +122,11 @@ export const CSS = `
 .oemt-log .oemt-lvl-debug { color: var(--oemt-muted); }
 .oemt-banner { border-left: 3px solid var(--oemt-warn); }
 .oemt-banner.oemt-fail { border-left-color: var(--oemt-fail); }
+.oemt-folder { transition: border-color var(--oemt-speed), background var(--oemt-speed); }
+.oemt-folder.oemt-dropping { border-color: var(--oemt-accent); background: color-mix(in srgb, var(--oemt-accent) 10%, var(--oemt-panel)); }
+.oemt-account { background: var(--oemt-raised); cursor: grab; }
+.oemt-account:active { cursor: grabbing; }
+.oemt-grip { color: var(--oemt-muted); letter-spacing: -2px; }
 .oemt-empty { padding: 26px; text-align: center; color: var(--oemt-muted); }
 @keyframes oemt-fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 .oemt-tabpage > * { animation: oemt-fade var(--oemt-speed) ease-out; }
