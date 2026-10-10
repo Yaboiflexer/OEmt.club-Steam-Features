@@ -2,6 +2,7 @@
 -- status so the UI never shows a control that does nothing. The live parts (Discord Rich Presence,
 -- now playing, media keys) are in modules/integrations_live.lua; all of them are opt-in.
 local util = require("core.util")
+local Insights = require("modules.insights")
 
 local M = {}
 
@@ -45,12 +46,13 @@ M.DEFINITIONS = {
         },
     },
     {
-        id = "insights", name = "Insights.gg", phase = 3,
-        detect = {},
-        detect_note = "Install location not yet verified; detection deferred to Phase 3.",
+        id = "insights", name = "Insights.gg", phase = 2,
+        detect = Insights.INSTALLS, -- one list of install locations (modules/insights.lua)
         capabilities = {
-            { id = "open_app", label = "Open Insights.gg", status = "planned" },
-            { id = "clips", label = "Session clip links", status = "planned" },
+            { id = "open_app", label = "Open Insights Capture, and see whether it is running", status = "available" },
+            { id = "auto_start", label = "Start Insights Capture automatically when a game starts", status = "available" },
+            { id = "clips", label = "Recordings matched to each game session (from the recordings folder)", status = "available",
+              note = "Reads file names and dates in the recordings folder only; never Insights' own database or sign-in data." },
         },
     },
 }

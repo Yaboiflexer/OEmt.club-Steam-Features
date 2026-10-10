@@ -29,6 +29,14 @@ OEMT_HANDLE OpenProcess(unsigned long access, int inherit, unsigned long pid);
 int QueryFullProcessImageNameW(OEMT_HANDLE h, unsigned long flags, uint16_t* buf, unsigned long* size);
 int WideCharToMultiByte(unsigned int cp, unsigned long flags, const uint16_t* w, int wn, char* out, int on, const char* d, int* used);
 void keybd_event(uint8_t vk, uint8_t scan, unsigned long flags, uintptr_t extra);
+typedef struct {
+    unsigned long dwSize; unsigned long cntUsage; unsigned long th32ProcessID; uintptr_t th32DefaultHeapID;
+    unsigned long th32ModuleID; unsigned long cntThreads; unsigned long th32ParentProcessID; long pcPriClassBase;
+    unsigned long dwFlags; uint16_t szExeFile[260];
+} OEMT_PROCESSENTRY32W;
+OEMT_HANDLE CreateToolhelp32Snapshot(unsigned long flags, unsigned long pid);
+int Process32FirstW(OEMT_HANDLE snap, OEMT_PROCESSENTRY32W* pe);
+int Process32NextW(OEMT_HANDLE snap, OEMT_PROCESSENTRY32W* pe);
 ]])
 if not cdef_ok then return M end
 
@@ -153,6 +161,25 @@ function M.media_key(action)
     C.keybd_event(vk, 0, 1, 0)       -- KEYEVENTF_EXTENDEDKEY
     C.keybd_event(vk, 0, 1 + 2, 0)   -- + KEYEVENTF_KEYUP
     return true
+end
+
+--- Which of the given programs (set of lower-case exe names) are running. Reads the process list only.
+function M.running(exes)
+    local found = {}
+    local snap = C.CreateToolhelp32Snapshot(2, 0) -- TH32CS_SNAPPROCESS
+    if invalid(snap) then return found end
+    local pe = ffi.new("OEMT_PROCESSENTRY32W")
+    pe.dwSize = ffi.sizeof(pe)
+    local more = C.Process32FirstW(snap, pe)
+    while more ~= 0 do
+        local len = 0
+        while len < 260 and pe.szExeFile[len] ~= 0 do len = len + 1 end
+        local name = utf8(pe.szExeFile, len):lower()
+        if exes[name] then found[name] = true end
+        more = C.Process32NextW(snap, pe)
+    end
+    C.CloseHandle(snap)
+    return found
 end
 
 return M

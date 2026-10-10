@@ -51,6 +51,9 @@ M.fields = {
     ["integrations.spotify.enabled"]    = { type = "bool", default = false, label = "Spotify", group = "integrations" },
     ["integrations.soundcloud.enabled"] = { type = "bool", default = false, label = "SoundCloud", group = "integrations" },
     ["integrations.insights.enabled"]   = { type = "bool", default = false, label = "Insights.gg", group = "integrations" },
+    ["integrations.insights.auto_start"] = { type = "bool", default = false, label = "Insights: start Insights Capture when a game starts", group = "integrations" },
+    ["integrations.insights.recordings_dir"] = { type = "string", max_len = 400, default = "",
+                                              label = "Insights recordings folder (empty = Videos/Insights Capture)", group = "integrations" },
 }
 
 -- Values renamed in later versions: old -> new. Applied by check(), so loading, setting and importing

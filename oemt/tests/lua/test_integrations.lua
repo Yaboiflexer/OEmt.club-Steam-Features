@@ -28,6 +28,7 @@ local IMPLEMENTED = {
     ["discord.rich_presence"] = true, ["discord.activity_privacy"] = true,
     ["spotify.now_playing"] = true, ["spotify.playback_control"] = true,
     ["soundcloud.now_playing"] = true, ["soundcloud.playback_control"] = true,
+    ["insights.open_app"] = true, ["insights.auto_start"] = true, ["insights.clips"] = true,
 }
 
 T.test("only implemented capabilities claim to be available", function()

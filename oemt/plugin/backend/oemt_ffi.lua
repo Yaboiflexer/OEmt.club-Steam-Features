@@ -111,3 +111,17 @@ function OEmtMediaControl(action) return call("media_control", action) end
 ---@ffi
 ---@return table
 function OEmtDiscordTest() return call("discord_test") end
+
+---@ffi
+---@param force boolean
+---@return table
+function OEmtInsightsStatus(force) return call("insights_status", force) end
+
+---@ffi
+---@return table
+function OEmtInsightsOpen() return call("insights_open") end
+
+---@ffi
+---@param path string
+---@return table
+function OEmtInsightsReveal(path) return call("insights_reveal", path) end

@@ -26,4 +26,7 @@ declare const backend: {
 	OEmtIntegrationTick(): FfiResult;
 	OEmtMediaControl(action: string): FfiResult;
 	OEmtDiscordTest(): FfiResult;
+	OEmtInsightsStatus(force: boolean): FfiResult;
+	OEmtInsightsOpen(): FfiResult;
+	OEmtInsightsReveal(path: string): FfiResult;
 };

@@ -4,7 +4,7 @@ import { FC, ReactNode, useEffect, useState } from 'react';
 import { api, CapabilityStatus, Integration, MediaAction } from '../api';
 import * as live from '../liveStore';
 import { useTabActive } from '../shell';
-import { Empty, ErrorText, Pill, useAsync } from '../ui';
+import { Empty, ErrorText, fmtBytes, fmtTime, Pill, useAsync } from '../ui';
 
 const CAP_TONE: Record<CapabilityStatus, 'pass' | 'accent' | 'fail'> = { available: 'pass', planned: 'accent', unsupported: 'fail' };
 const DETECTION_LABEL: Record<string, string> = {
@@ -42,6 +42,54 @@ const Card: FC<{ i: Integration; children?: ReactNode; status?: ReactNode }> = (
 		<Capabilities i={i} />
 	</section>
 );
+
+/** Insights.gg: running state, Open, auto-start, recordings folder and recent recordings. */
+const InsightsCard: FC<{ i: Integration; on: boolean; autoStart: boolean; folder: string; busy: boolean; save: (k: string, v: unknown) => Promise<void> }> = ({ i, on, autoStart, folder, busy, save }) => {
+	const st = useAsync(() => api.insightsStatus(true), [on]);
+	const [dir, setDir] = useState(folder);
+	const [err, setErr] = useState<unknown>();
+	useEffect(() => setDir(folder), [folder]);
+	const act = (p: Promise<unknown>, reload = true) => p.then(() => reload && setTimeout(st.reload, 1500), setErr);
+	const s = st.data;
+	return (
+		<Card i={i} status={s?.installed && <Pill tone={s.running ? 'pass' : 'neutral'}>{s.running ? 'Running' : 'Not running'}</Pill>}>
+			<Toggle checked={on} disabled={busy} onChange={(x) => save('integrations.insights.enabled', x)}>Use Insights Capture with OEmt.club</Toggle>
+			{err ? <div className="oemt-small" style={{ color: 'var(--oemt-fail)' }}>{String((err as Error)?.message ?? err)}</div> : null}
+			{s && !s.installed && <span className="oemt-muted oemt-small">Insights Capture isn't installed (get it from insights.gg).</span>}
+			{s?.installed && (
+				<div className="oemt-row oemt-wrap">
+					<button className="oemt-btn oemt-primary" onClick={() => act(api.insightsOpen())}>{s.running ? 'Show Insights' : 'Open Insights'}</button>
+					<button className="oemt-btn" onClick={() => st.reload()}>Refresh</button>
+					<span className="oemt-muted oemt-small">{s.variant}</span>
+				</div>
+			)}
+			{on && s?.installed && (
+				<>
+					<Toggle checked={autoStart} disabled={busy} onChange={(x) => save('integrations.insights.auto_start', x)}>Start Insights Capture when a game starts</Toggle>
+					<label className="oemt-stack" style={{ gap: 4 }}>
+						<span className="oemt-small oemt-muted">Recordings folder (where Insights saves videos; empty = Videos\Insights Capture)</span>
+						<div className="oemt-row">
+							<input className="oemt-input" style={{ flex: 1 }} placeholder={s.recordings_dir} value={dir} maxLength={400}
+								onChange={(e) => setDir(e.target.value)} onBlur={() => dir.trim() !== folder && save('integrations.insights.recordings_dir', dir.trim()).then(() => st.reload())}
+								onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()} />
+							<button className="oemt-btn" onClick={() => act(api.insightsReveal(''), false)}>Open folder</button>
+						</div>
+					</label>
+					<div className="oemt-stack" style={{ gap: 4 }}>
+						<span className="oemt-small oemt-muted">Recent recordings ({s.recordings_total})</span>
+						{s.recordings.length === 0 ? <span className="oemt-muted oemt-small">None found in {s.recordings_dir}. If Insights saves elsewhere, set the folder above.</span> : s.recordings.slice(0, 6).map((r) => (
+							<div key={r.path} className="oemt-row oemt-small">
+								<span className="oemt-np-title" style={{ flex: 1 }} title={r.path}>{r.name}</span>
+								<span className="oemt-muted">{fmtTime(r.mtime)} · {fmtBytes(r.size)}</span>
+								<button className="oemt-btn oemt-small-btn" onClick={() => act(api.insightsReveal(r.path), false)}>Show</button>
+							</div>
+						))}
+					</div>
+				</>
+			)}
+		</Card>
+	);
+};
 
 export const IntegrationsView: FC = () => {
 	const visible = useTabActive();
@@ -174,7 +222,12 @@ export const IntegrationsView: FC = () => {
 					</Card>
 				)}
 
-				{(list.data ?? []).filter((i) => !['discord', 'spotify', 'soundcloud'].includes(i.id)).map((i) => (
+				{byId.get('insights') && (
+					<InsightsCard i={byId.get('insights')!} on={on('insights')} autoStart={v['integrations.insights.auto_start'] === true}
+						folder={String(v['integrations.insights.recordings_dir'] ?? '')} busy={busy} save={save} />
+				)}
+
+				{(list.data ?? []).filter((i) => !['discord', 'spotify', 'soundcloud', 'insights'].includes(i.id)).map((i) => (
 					<Card key={i.id} i={i}>
 						<span className="oemt-muted oemt-small">Coming in a later phase.</span>
 					</Card>

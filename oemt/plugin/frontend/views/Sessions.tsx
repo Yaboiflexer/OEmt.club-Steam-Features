@@ -88,6 +88,8 @@ export const SessionsView: FC = () => {
 		return `${v.split(':').slice(0, 2).join(':')}:•••`;
 	};
 	const ipColumn = !!ip && (ip.enabled || ip.sessions.length > 0);
+	// Insights recordings per session: the backend adds `clips` only when the Insights integration is on.
+	const clipsColumn = (data.data?.history ?? []).some((s) => s.clips !== undefined);
 
 	return (
 		<div className="oemt-stack">
@@ -127,7 +129,7 @@ export const SessionsView: FC = () => {
 				) : (
 					<table className="oemt-table">
 						<thead>
-							<tr><th>Game</th><th>Started</th><th>Duration</th>{ipColumn && <th>IP</th>}<th>Status</th></tr>
+							<tr><th>Game</th><th>Started</th><th>Duration</th>{ipColumn && <th>IP</th>}{clipsColumn && <th>Clips</th>}<th>Status</th></tr>
 						</thead>
 						<tbody>
 							{data.data.history.map((s) => {
@@ -138,6 +140,10 @@ export const SessionsView: FC = () => {
 										<td>{fmtTime(s.started_at)}</td>
 										<td>{s.status === 'running' ? fmtDuration(now - s.started_at) : fmtDuration(s.duration_s)}</td>
 										{ipColumn && <td>{sip ? show(sip.ip) : <span className="oemt-muted">—</span>}{sip && !sip.fresh && <span className="oemt-muted oemt-small" title="Lookup failed at game start; last known IP shown"> (last known)</span>}</td>}
+										{clipsColumn && <td>{s.clips?.length ? (
+											<button className="oemt-btn oemt-small-btn" title={s.clips.map((c) => c.name).join(', ')}
+												onClick={() => api.insightsReveal(s.clips![0].path).catch(setError)}>{s.clips.length} clip{s.clips.length === 1 ? '' : 's'}</button>
+										) : <span className="oemt-muted">—</span>}</td>}
 										<td><Pill tone={STATUS_TONE[s.status] ?? 'neutral'}>{s.status}</Pill></td>
 									</tr>
 								);

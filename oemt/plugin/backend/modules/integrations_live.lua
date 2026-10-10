@@ -77,7 +77,20 @@ function M:tick()
         self.discord:set_activity(nil)
         self.discord:disconnect()
     end
-    return self:status()
+    local st = self:status()
+    if discord_on then self:_log_discord(st.discord) end
+    return st
+end
+
+--- Log Discord connection changes once (connected, lost, error), not every tick.
+function M:_log_discord(st)
+    local key = (st.connected and "connected") or (st.error or "off")
+    if key == self.last_discord_log then return end
+    self.last_discord_log = key
+    if self.d.log then
+        self.d.log:info({ module = "integrations", event = "discord", outcome = st.connected and "connected" or "disconnected",
+                          msg = st.connected and "Rich Presence connected" or tostring(st.error or "off") })
+    end
 end
 
 function M:status()
