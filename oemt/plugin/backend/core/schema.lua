@@ -35,39 +35,37 @@ M.fields = {
                                  label = "Items in Steam's top bar (comma-separated; empty = none)", group = "topbar" },
     ["ui.open_on_start"]     = { type = "bool", default = true, label = "Open OEmt.club when Steam starts", group = "appearance" },
     -- Start page: an OEmt tab or one of Steam's own pages (opened through Steam's steam:// links).
-    ["ui.default_tab"]       = { type = "enum", values = { "sessions", "media", "settings", "diagnostics", "integrations",
+    ["ui.default_tab"]       = { type = "enum", values = { "sessions", "settings", "diagnostics",
                                                            "steam_store", "steam_library", "steam_community", "steam_profile" },
-                                 labels = { sessions = "Sessions", media = "Media", settings = "Settings", diagnostics = "Diagnostics",
-                                            integrations = "Integrations", steam_store = "Steam Store", steam_library = "Steam Library",
+                                 labels = { sessions = "Sessions", settings = "Settings", diagnostics = "Diagnostics", steam_store = "Steam Store", steam_library = "Steam Library",
                                             steam_community = "Steam Community", steam_profile = "My Steam profile" },
                                  default = "sessions", label = "Start page when Steam opens", group = "appearance" },
 
-    -- Integrations are opt-in. Phase 1 performs detection only; enabling records consent for later phases.
+    -- Discord Rich Presence (opt-in). The Application ID is public; no token or login is used.
     ["integrations.discord.enabled"]    = { type = "bool", default = false, label = "Discord", group = "integrations" },
     ["integrations.discord.client_id"]  = { type = "string", max_len = 20, pattern = "^%d*$", default = "",
                                            label = "Discord Application ID (from discord.com/developers; public, not a secret)", group = "integrations" },
     ["integrations.discord.idle_presence"] = { type = "bool", default = false, label = "Discord: show \"In Steam\" when no game is running", group = "integrations" },
-    ["integrations.discord.show_music"] = { type = "bool", default = false, label = "Discord: show the song you are listening to", group = "integrations" },
     ["integrations.discord.invite_button"] = { type = "bool", default = true, label = "Discord: add a \"Join OEmt.club\" button (discord.gg/OEmt)", group = "integrations" },
-    ["integrations.spotify.enabled"]    = { type = "bool", default = false, label = "Spotify", group = "integrations" },
-    ["integrations.soundcloud.enabled"] = { type = "bool", default = false, label = "SoundCloud", group = "integrations" },
-    ["integrations.insights.enabled"]   = { type = "bool", default = false, label = "Insights.gg", group = "integrations" },
-    ["integrations.insights.auto_start"] = { type = "bool", default = false, label = "Insights: start Insights Capture when a game starts", group = "integrations" },
-    ["integrations.insights.recordings_dir"] = { type = "string", max_len = 400, default = "",
-                                              label = "Insights recordings folder (empty = Videos/Insights Capture)", group = "integrations" },
 }
 
 -- Values renamed in later versions: old -> new. Applied by check(), so loading, setting and importing
 -- all accept the old value and store the new one.
 M.migrations = {
     ["ui.default_tab"] = { netsessions = "sessions", network = "sessions", performance = "diagnostics",
-                         accounts = "sessions", home = "sessions", library = "sessions" },
+                         accounts = "sessions", home = "sessions", library = "sessions", media = "sessions", integrations = "settings" },
 }
 
 -- Settings that earlier versions had and this one dropped; they are deleted from the store on load.
 M.removed = {
     ["integrations.tcno.enabled"] = true,       -- TcNo integration removed
     ["integrations.discord.store_button"] = true, -- replaced by integrations.discord.invite_button
+    ["integrations.discord.show_music"] = true,   -- music integrations removed
+    ["integrations.spotify.enabled"] = true,
+    ["integrations.soundcloud.enabled"] = true,
+    ["integrations.insights.enabled"] = true,     -- Insights integration removed
+    ["integrations.insights.auto_start"] = true,
+    ["integrations.insights.recordings_dir"] = true,
     ["accounts.ttl_avatar_min"] = true,         -- account cache moved to the separate Accounts build
     ["accounts.ttl_profile_min"] = true,
     ["accounts.ttl_status_min"] = true,

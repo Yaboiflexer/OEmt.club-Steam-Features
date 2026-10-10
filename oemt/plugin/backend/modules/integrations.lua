@@ -2,7 +2,6 @@
 -- status so the UI never shows a control that does nothing. The live parts (Discord Rich Presence,
 -- now playing, media keys) are in modules/integrations_live.lua; all of them are opt-in.
 local util = require("core.util")
-local Insights = require("modules.insights")
 
 local M = {}
 
@@ -18,41 +17,9 @@ M.DEFINITIONS = {
         capabilities = {
             { id = "rich_presence", label = "Rich Presence: the game you are playing and for how long, via Discord's local connection", status = "available",
               note = "Needs a Discord Application ID in Settings (create a free app at discord.com/developers)." },
-            { id = "activity_privacy", label = "Choose what shows: game, \"In Steam\" when idle, the song you are listening to", status = "available" },
+            { id = "activity_privacy", label = "Choose what shows: game, \"In Steam\" when idle, the \"Join OEmt.club\" button", status = "available" },
             { id = "server_data", label = "Reading private server data", status = "unsupported",
               note = "Requires a bot added to the server with explicit permissions; never via the user's client." },
-        },
-    },
-    {
-        id = "spotify", name = "Spotify", phase = 2,
-        detect = {
-            { env = "APPDATA", path = "Spotify/Spotify.exe", variant = "Desktop installer" },
-        },
-        detect_note = "Microsoft Store installs live under WindowsApps and are not detected; now playing still works.",
-        capabilities = {
-            { id = "now_playing", label = "Now playing, read from the Spotify window (no login, no API key)", status = "available" },
-            { id = "playback_control", label = "Play/pause, next, previous (Windows media keys; no Premium needed)", status = "available",
-              note = "Media keys go to whichever app Windows treats as the active player." },
-        },
-    },
-    {
-        id = "soundcloud", name = "SoundCloud", phase = 2,
-        detect = {},
-        detect_note = "SoundCloud has no desktop app; integration would be web-based.",
-        capabilities = {
-            { id = "now_playing", label = "Now playing, read from the SoundCloud browser tab", status = "available",
-              note = "Windows only sees the selected tab of each browser window, so keep SoundCloud's tab selected." },
-            { id = "playback_control", label = "Play/pause, next, previous (Windows media keys)", status = "available" },
-        },
-    },
-    {
-        id = "insights", name = "Insights.gg", phase = 2,
-        detect = Insights.INSTALLS, -- one list of install locations (modules/insights.lua)
-        capabilities = {
-            { id = "open_app", label = "Open Insights Capture, and see whether it is running", status = "available" },
-            { id = "auto_start", label = "Start Insights Capture automatically when a game starts", status = "available" },
-            { id = "clips", label = "Recordings matched to each game session (from the recordings folder)", status = "available",
-              note = "Reads file names and dates in the recordings folder only; never Insights' own database or sign-in data." },
         },
     },
 }

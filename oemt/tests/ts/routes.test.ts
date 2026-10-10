@@ -11,14 +11,14 @@ describe('URL paths', () => {
 		}
 	});
 
-	test('pages: Sessions, Media, Settings, Diagnostics, Integrations; Sessions is the start page', () => {
-		expect(TAB_IDS).toEqual(['sessions', 'media', 'settings', 'diagnostics', 'integrations']);
+	test('pages: Sessions, Settings, Diagnostics; Sessions is the start page', () => {
+		expect(TAB_IDS).toEqual(['sessions', 'settings', 'diagnostics']);
 		expect(DEFAULT_TAB).toBe('sessions');
 		expect(pathToRoute(undefined)).toEqual({ tab: 'sessions', redirected: false });
 	});
 
 	test('removed and renamed pages redirect', () => {
-		for (const old of ['network-sessions', 'netsessions', 'network', 'home', 'library', 'accounts']) {
+		for (const old of ['network-sessions', 'netsessions', 'network', 'home', 'library', 'accounts', 'media']) {
 			expect(pathToRoute(old)).toEqual({ tab: 'sessions', redirected: true });
 		}
 		expect(pathToRoute('network-sessions', 'history')).toEqual({ tab: 'sessions', redirected: true });
@@ -74,11 +74,19 @@ describe('start page', () => {
 	});
 
 	test('every start page in the settings list is handled', () => {
-		const choices = ['sessions', 'media', 'settings', 'diagnostics', 'integrations', 'steam_store', 'steam_library', 'steam_community', 'steam_profile'];
+		const choices = ['sessions', 'settings', 'diagnostics', 'steam_store', 'steam_library', 'steam_community', 'steam_profile'];
 		for (const c of choices) {
 			const t = startTarget(c);
 			if (c.startsWith('steam_')) expect(t.kind).toBe('steam');
 			else expect(t).toEqual({ kind: 'tab', path: `/oemt/${c}` });
 		}
+	});
+});
+
+describe('integrations moved into Settings', () => {
+	test('old Integrations and Media links redirect; saved top bars collapse', () => {
+		expect(pathToRoute('integrations')).toEqual({ tab: 'settings', redirected: true });
+		expect(pathToRoute('media')).toEqual({ tab: 'sessions', redirected: true });
+		expect(parseTopbar('sessions,media,settings,diagnostics,integrations').map((i) => i.id)).toEqual(['sessions', 'settings', 'diagnostics']);
 	});
 });

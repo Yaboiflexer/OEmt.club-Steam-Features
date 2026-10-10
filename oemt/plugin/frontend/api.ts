@@ -10,8 +10,6 @@ export interface Session {
 	id: number; appid: string; instance: number; name?: string;
 	started_at: number; ended_at?: number; duration_s?: number;
 	status: 'running' | 'ended' | 'interrupted';
-	/** Insights recordings made during this session (only when the Insights integration is on). */
-	clips?: Recording[];
 }
 
 export interface Overview {
@@ -30,20 +28,10 @@ export interface Integration {
 	capabilities: { id: string; label: string; status: CapabilityStatus; note?: string }[];
 }
 
-export interface NowPlaying { source: 'spotify' | 'soundcloud'; artist?: string; title: string }
-export interface Recording { name: string; path: string; size: number; mtime: number }
-export interface InsightsStatus {
-	installed: boolean; variant?: string; running?: boolean; enabled: boolean; auto_start: boolean;
-	recordings_dir?: string; recordings: Recording[]; recordings_total: number;
-}
-export interface MediaItem { id: string; source: 'spotify' | 'soundcloud'; kind: string; ref: string; url: string; title: string; added_at: number }
-export type MediaAction = 'play_pause' | 'next' | 'previous';
 /** Live state from backend/modules/integrations_live.lua. */
 export interface LiveStatus {
 	available: boolean;
 	discord: { enabled: boolean; configured: boolean; connected: boolean; error?: string; retry_at?: number; showing: boolean };
-	now_playing?: NowPlaying;
-	music_enabled: boolean;
 }
 
 export type SettingType = 'bool' | 'int' | 'enum' | 'color' | 'string';
@@ -117,23 +105,11 @@ export const api = {
 		call<{ tracked: boolean; reason?: string }>('session_event', backend.OEmtSessionEvent(appid, instance, running)),
 	async sessions(limit = 100): Promise<SessionsData> {
 		const s = await call<SessionsData>('sessions', backend.OEmtGetSessions(limit));
-		return { ...s, active: arr(s.active), history: arr<Session>(s.history).map((h) => (h.clips ? { ...h, clips: arr(h.clips) } : h)) };
+		return { ...s, active: arr(s.active), history: arr(s.history) };
 	},
 	clearSessions: () => call<boolean>('clear_sessions', backend.OEmtClearSessions()),
 	integrationTick: () => call<LiveStatus>('integration_tick', backend.OEmtIntegrationTick()),
-	mediaControl: (action: MediaAction) => call<boolean>('media_control', backend.OEmtMediaControl(action)),
 	discordTest: () => call<LiveStatus>('discord_test', backend.OEmtDiscordTest()),
-	async insightsStatus(force = false): Promise<InsightsStatus> {
-		const s = await call<InsightsStatus>('insights_status', backend.OEmtInsightsStatus(force));
-		return { ...s, recordings: arr(s.recordings) };
-	},
-	mediaList: async () => arr<MediaItem>(await call<unknown>('media_list', backend.OEmtMediaList())),
-	mediaAdd: async (url: string, title = '') => arr<MediaItem>(await call<unknown>('media_add', backend.OEmtMediaAdd(url, title))),
-	mediaRemove: async (id: string) => arr<MediaItem>(await call<unknown>('media_remove', backend.OEmtMediaRemove(id))),
-	mediaRename: async (id: string, title: string) => arr<MediaItem>(await call<unknown>('media_rename', backend.OEmtMediaRename(id, title))),
-	insightsOpen: () => call<boolean>('insights_open', backend.OEmtInsightsOpen()),
-	/** Show a recording in Explorer; empty path opens the recordings folder. */
-	insightsReveal: (path = '') => call<boolean>('insights_reveal', backend.OEmtInsightsReveal(path)),
 	async integrations(refresh = false): Promise<Integration[]> {
 		const list = arr<Integration>(await call<unknown>('integrations', backend.OEmtGetIntegrations(refresh)));
 		return list.map((i) => ({ ...i, capabilities: arr(i.capabilities) }));

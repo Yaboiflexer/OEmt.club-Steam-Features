@@ -210,9 +210,6 @@ const LiveIntegrationsPanel: FC = () => {
 						<><Pill tone={d.connected ? 'pass' : 'warn'}>{d.connected ? 'Connected' : 'Not connected'}</Pill> <span className="oemt-muted">
 							{d.connected ? (d.showing ? 'status is set' : 'nothing to show') : d.error ?? ''}{d.retry_at ? ` · retry ${new Date(d.retry_at * 1000).toLocaleTimeString()}` : ''}</span></>
 					)}</td></tr>
-					<tr><td>Now playing</td><td>{!s.music_enabled ? <span className="oemt-muted">Off</span> : s.now_playing
-						? <span>{s.now_playing.title}{s.now_playing.artist ? ` · ${s.now_playing.artist}` : ''} <span className="oemt-muted">({s.now_playing.source})</span></span>
-						: <span className="oemt-muted">Nothing playing</span>}</td></tr>
 				</tbody>
 			</table>
 		</Panel>

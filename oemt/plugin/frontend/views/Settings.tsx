@@ -4,6 +4,7 @@ import { scheduleIpChecks } from '../iplog';
 import { parseTopbar, refreshTopbar, TOPBAR_CHOICES } from '../topbar';
 import { useShell } from '../shell';
 import { ConfirmButton, Empty, ErrorText, Panel, useAsync } from '../ui';
+import { DiscordPanel } from './DiscordPanel';
 
 const GROUPS: { id: string; label: string }[] = [
 	{ id: 'appearance', label: 'Appearance' },
@@ -154,14 +155,16 @@ export const SettingsView: FC = () => {
 				</div>
 			)}
 
+			<DiscordPanel values={values} onSaved={settings.reload} />
+
 			<TopbarPanel value={values['ui.topbar_items']} onSaved={settings.reload} />
 
 			{GROUPS.map((g) => {
-				const fields = schema.filter((f) => f.group === g.id);
+				// Discord (the "integrations" group) has its own panel above.
+				const fields = g.id === 'integrations' ? [] : schema.filter((f) => f.group === g.id);
 				if (!fields.length) return null;
 				return (
 					<Panel key={g.id} label={g.label}>
-						{g.id === 'integrations' && <div className="oemt-muted oemt-small" style={{ marginBottom: 8 }}>Opt-in only. Nothing connects to these services in Phase 1.</div>}
 						{fields.map((f) => (
 							<div key={f.key} className="oemt-row" style={{ padding: '7px 0', borderBottom: '1px solid var(--oemt-line)' }}>
 								<div style={{ flex: 1 }}>

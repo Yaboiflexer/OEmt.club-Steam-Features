@@ -3,7 +3,7 @@
 // Tabs are the pages inside the OEmt.club screen. Old tab ids from earlier versions (saved in
 // ui.default_tab / ui.topbar_items or used by other code) are redirected so nothing lands on a blank page.
 
-export type TabId = 'sessions' | 'media' | 'settings' | 'diagnostics' | 'integrations';
+export type TabId = 'sessions' | 'settings' | 'diagnostics';
 
 /** Where bare /oemt, unknown ids and removed pages land. */
 export const DEFAULT_TAB: TabId = 'sessions';
@@ -20,13 +20,16 @@ export const LEGACY_REDIRECTS: Record<string, Route> = {
 	home: { tab: 'sessions' },
 	library: { tab: 'sessions' },
 	accounts: { tab: 'sessions' },
+	media: { tab: 'sessions' },
+	// Integrations (only Discord Rich Presence left) moved into Settings.
+	integrations: { tab: 'settings' },
 };
 
 /** Own keys only, so ids like "constructor" never match Object.prototype. */
 const legacyOf = (id: string): Route | undefined =>
 	Object.prototype.hasOwnProperty.call(LEGACY_REDIRECTS, id) ? LEGACY_REDIRECTS[id] : undefined;
 
-export const TAB_IDS: TabId[] = ['sessions', 'media', 'settings', 'diagnostics', 'integrations'];
+export const TAB_IDS: TabId[] = ['sessions', 'settings', 'diagnostics'];
 
 /** Accepts "tab", "tab:sub" or a legacy id; anything unknown falls back to DEFAULT_TAB. */
 export function resolveRoute(id: string | undefined | null): Route {
@@ -39,19 +42,15 @@ export function resolveRoute(id: string | undefined | null): Route {
 
 // ---- Steam top bar ------------------------------------------------------------------------------
 
-export interface TopbarItem { id: string; label: string; kind: 'tab' | 'route' | 'web'; route?: string; url?: string }
+export interface TopbarItem { id: string; label: string; kind: 'tab' | 'route'; route?: string }
 
 /** Everything that may appear in Steam's top bar. Steam's own STORE/LIBRARY/COMMUNITY come first there,
  *  so only OEmt pages and Millennium's Themes & Plugins are offered here. Diagnostics is offered but off
  *  by default (it stays reachable from the health badge). */
 export const TOPBAR_CHOICES: TopbarItem[] = [
 	{ id: 'sessions', label: 'Sessions', kind: 'tab' },
-	{ id: 'media', label: 'Media', kind: 'tab' },
 	{ id: 'settings', label: 'Settings', kind: 'tab' },
 	{ id: 'diagnostics', label: 'Diagnostics', kind: 'tab' },
-	{ id: 'integrations', label: 'Integrations', kind: 'tab' },
-	{ id: 'spotify', label: 'Spotify', kind: 'web', url: 'https://open.spotify.com/' },
-	{ id: 'soundcloud', label: 'SoundCloud', kind: 'web', url: 'https://soundcloud.com/discover' },
 	{ id: 'themes', label: 'Themes & Plugins', kind: 'route', route: '/millennium/settings' },
 ];
 

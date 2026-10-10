@@ -104,45 +104,6 @@ function OEmtFrontendLog(level, event, message) return call("frontend_log", leve
 function OEmtIntegrationTick() return call("integration_tick") end
 
 ---@ffi
----@param action string
----@return table
-function OEmtMediaControl(action) return call("media_control", action) end
-
----@ffi
 ---@return table
 function OEmtDiscordTest() return call("discord_test") end
 
----@ffi
----@param force boolean
----@return table
-function OEmtInsightsStatus(force) return call("insights_status", force) end
-
----@ffi
----@return table
-function OEmtInsightsOpen() return call("insights_open") end
-
----@ffi
----@param path string
----@return table
-function OEmtInsightsReveal(path) return call("insights_reveal", path) end
-
----@ffi
----@return table
-function OEmtMediaList() return call("media_list") end
-
----@ffi
----@param url string
----@param title string
----@return table
-function OEmtMediaAdd(url, title) return call("media_add", url, title) end
-
----@ffi
----@param id string
----@return table
-function OEmtMediaRemove(id) return call("media_remove", id) end
-
----@ffi
----@param id string
----@param title string
----@return table
-function OEmtMediaRename(id, title) return call("media_rename", id, title) end

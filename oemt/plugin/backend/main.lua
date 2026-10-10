@@ -37,7 +37,7 @@ local function production_services()
         http_get = function(url, opts) return http.get(url, opts) end,
         -- utils.exec runs `cmd /c <command>` hidden (CREATE_NO_WINDOW) and waits; callers detach with "start".
         exec = function(cmd) return utils.exec(cmd) end,
-        -- Windows calls through LuaJIT's FFI: Discord's local pipe, music window titles, media keys.
+        -- Windows calls through LuaJIT's FFI: Discord's local pipe.
         win32 = require("core.win32"),
         read_file = util.read_file,
         exists = function(p) return fs.exists(p) end,
@@ -56,19 +56,6 @@ local function production_services()
             local names = {}
             for _, e in ipairs(entries) do if e.is_file then names[#names + 1] = e.name end end
             return names
-        end,
-        -- Files under `dir` (up to `max_depth` folders deep) with size and modified time (unix s).
-        scan_files = function(dir, max_depth)
-            local entries = fs.list_recursive(dir)
-            if not entries then return nil end
-            local out = {}
-            for _, e in ipairs(entries) do
-                if e.is_file and (e.depth or 0) <= (max_depth or 2) then
-                    out[#out + 1] = { path = e.path, name = e.name, size = fs.file_size(e.path) or 0,
-                                      mtime = fs.last_write_time(e.path) or 0 }
-                end
-            end
-            return out
         end,
         config_store = {
             get_all = function() return millennium.config.get_all() end,

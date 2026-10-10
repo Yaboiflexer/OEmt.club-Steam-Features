@@ -12,8 +12,6 @@ local library_mod  = require("modules.steam_library")
 local Sessions     = require("modules.sessions")
 local integrations = require("modules.integrations")
 local IntegrationsLive = require("modules.integrations_live")
-local Insights = require("modules.insights")
-local Media = require("modules.media")
 local diagnostics  = require("modules.diagnostics")
 local IpLog        = require("modules.ip_log")
 
@@ -140,7 +138,7 @@ function M.new(services)
         end,
     })
 
-    -- Integrations: install detection + live features (Discord Rich Presence, now playing, media keys)
+    -- Integrations: Discord Rich Presence (detection + live status)
     app.integrations = integrations.module({ getenv = services.getenv, exists = services.exists, platform = services.platform })
     app.registry:register(app.integrations)
     app.live = IntegrationsLive.new({ config = app.config, win32 = services.win32, sessions = app.sessions,
@@ -152,21 +150,6 @@ function M.new(services)
     end
     app.events:on("game.started", live_tick)
     app.events:on("game.stopped", live_tick)
-    app.insights = Insights.new({ getenv = services.getenv, exists = services.exists, exec = services.exec,
-                                  scan_files = services.scan_files, win32 = services.win32, config = app.config,
-                                  clock = services.clock, log = app.log })
-    -- Media page: saved Spotify / SoundCloud links for the embedded players
-    app.media = Media.new({ clock = services.clock, store = (data_dir and data_ok) and {
-        load = function() return services.read_file(util.join(data_dir, "media.json")) end,
-        save = function(text) return util.write_file_atomic(util.join(data_dir, "media.json"), text) end,
-    } or nil })
-    app.media:load()
-
-    -- Optional: start Insights Capture when a game starts, so recording is ready.
-    app.events:on("game.started", function()
-        local ok, err = pcall(app.insights.on_game_started, app.insights)
-        if not ok then app.log:warn({ module = "insights", event = "auto_start", outcome = "failed", error = tostring(err) }) end
-    end)
 
     app.registry:start_all()
     app.metrics.startup_ms = (os.clock() - t0) * 1000
@@ -223,21 +206,6 @@ function M.attach_api(app)
     wrap("sessions", function(limit)
         limit = tonumber(limit) or 50
         local history = app.sessions:history_list(limit)
-        -- Insights recordings made during each session (when the Insights integration is on).
-        if app.insights:enabled() then
-            local recs = app.insights:recordings()
-            for n, orig in ipairs(history) do
-                local s = {} -- copy: history_list returns the stored entries, which must not gain clips
-                for k, val in pairs(orig) do s[k] = val end
-                history[n] = s
-                local clips = {}
-                for i, r in ipairs(app.insights:clips_for(s, recs)) do
-                    if i > 5 then break end
-                    clips[i] = { name = r.name, path = r.path, size = r.size, mtime = r.mtime }
-                end
-                s.clips = util.array(clips)
-            end
-        end
         return { active = app.sessions:active_list(), history = history,
                  enabled = app.registry:is_running("sessions"), interrupted_on_load = app.sessions.interrupted_on_load }
     end)
@@ -250,38 +218,6 @@ function M.attach_api(app)
 
     wrap("integrations", function(refresh) return app.integrations.list(app.ctx, refresh == true) end)
     wrap("integration_tick", function() return app.live:tick() end)
-    wrap("media_control", function(action)
-        local ok, err = app.live:media(tostring(action or ""))
-        if not ok then error(err) end
-        return true
-    end)
-    wrap("media_list", function() return app.media:list() end)
-    wrap("media_add", function(url, title)
-        local it, err = app.media:add(url, title)
-        if not it then error(err) end
-        return app.media:list()
-    end)
-    wrap("media_remove", function(id)
-        local ok, err = app.media:remove(tostring(id or ""))
-        if not ok then error(err) end
-        return app.media:list()
-    end)
-    wrap("media_rename", function(id, title)
-        local ok, err = app.media:rename(tostring(id or ""), title)
-        if not ok then error(err) end
-        return app.media:list()
-    end)
-    wrap("insights_status", function(force) return app.insights:status(force == true) end)
-    wrap("insights_open", function()
-        local ok, err = app.insights:open()
-        if not ok then error(err) end
-        return true
-    end)
-    wrap("insights_reveal", function(path)
-        local ok, err = app.insights:reveal(path ~= nil and tostring(path) or nil)
-        if not ok then error(err) end
-        return true
-    end)
     wrap("discord_test", function()
         local res, err = app.live:test()
         if not res then error(err) end

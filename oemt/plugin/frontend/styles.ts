@@ -154,33 +154,9 @@ export const CSS = `
 
 
 /* Integrations and now playing */
-.oemt-caps { margin-top: var(--oemt-s3); }
-.oemt-caps summary { cursor: pointer; }
-.oemt-nowplaying { padding: var(--oemt-s3) var(--oemt-s4); }
-.oemt-np-compact { padding: var(--oemt-s2); background: var(--oemt-raised); }
-.oemt-np-text { display: flex; flex-direction: column; min-width: 0; }
-.oemt-np-title, .oemt-np-artist { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.oemt-np-artist { font-size: 12px; }
 .oemt-small-btn { padding: 4px 10px; font-size: 12px; }
 
-/* Media page */
-.oemt-media { display: grid; grid-template-columns: 300px 1fr; gap: var(--oemt-gap); height: 100%; min-height: 0; }
-.oemt-media-side { display: flex; flex-direction: column; gap: var(--oemt-s3); min-height: 0; }
-.oemt-media-list { flex: 1; overflow-y: auto; min-height: 120px; display: flex; flex-direction: column; gap: 2px; }
-.oemt-media-item { display: flex; align-items: center; gap: var(--oemt-s2); padding: 6px 8px; border-radius: var(--oemt-radius); cursor: pointer; }
-.oemt-media-item:hover { background: var(--oemt-hover); }
-.oemt-media-item.oemt-selected { background: color-mix(in srgb, var(--oemt-accent) 22%, transparent); }
-.oemt-media-item:focus-visible { outline: 2px solid var(--oemt-accent); outline-offset: -2px; }
-.oemt-media-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
-.oemt-src-spotify { background: #1db954; }
-.oemt-src-soundcloud { background: #ff5500; }
-.oemt-media-player { display: flex; flex-direction: column; min-height: 0; overflow-y: auto; }
-.oemt-media-title { flex: 1; max-width: 420px; font-weight: 700; }
-.oemt-media-frame { width: 100%; border: 0; border-radius: var(--oemt-radius); background: var(--oemt-raised); flex: none; }
-@media (max-width: 900px) { .oemt-media { grid-template-columns: 1fr; } }
-
 /* Integrations page */
-.oemt-int-page { display: flex; flex-direction: column; gap: var(--oemt-s3); max-width: 920px; }
 .oemt-int { padding: var(--oemt-s4); display: flex; flex-direction: column; gap: var(--oemt-s3); border: 1px solid transparent; transition: border-color var(--oemt-speed); }
 .oemt-int.oemt-int-on { border-color: var(--oemt-line); }
 .oemt-int-head { display: flex; align-items: center; gap: var(--oemt-s3); }
@@ -193,20 +169,4 @@ export const CSS = `
 .oemt-set-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 .oemt-set-ctl { flex: none; }
 .oemt-compact-input { padding: 5px 8px; font-size: 12px; width: 240px; }
-.oemt-int-np { display: flex; align-items: center; gap: var(--oemt-s3); padding: 10px 12px; margin-bottom: 6px; border-radius: var(--oemt-radius); background: var(--oemt-raised); }
-.oemt-int-np .oemt-np-text { flex: 1; }
-.oemt-int-list { display: flex; flex-direction: column; gap: 2px; padding-top: 8px; border-top: 1px solid var(--oemt-line); }
-.oemt-int-file { appearance: none; border: 0; background: none; color: inherit; font: inherit; text-align: left; display: flex; justify-content: space-between; gap: var(--oemt-s3); padding: 5px 6px; border-radius: var(--oemt-radius); cursor: pointer; }
-.oemt-int-file:hover { background: var(--oemt-hover); }
-.oemt-int .oemt-caps { margin: 0; padding-left: 48px; }
-.oemt-link { appearance: none; border: 0; background: none; padding: 0; color: var(--oemt-accent-2); font: inherit; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
-
-/* Media controls (SVG) */
-.oemt-media-ctl { display: inline-flex; align-items: center; gap: 6px; flex: none; }
-.oemt-ctl-btn { appearance: none; border: 0; background: none; color: var(--oemt-muted); width: 30px; height: 30px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: color var(--oemt-speed), background-color var(--oemt-speed), transform var(--oemt-speed); }
-.oemt-ctl-btn svg { width: 16px; height: 16px; fill: currentColor; }
-.oemt-ctl-btn:hover { color: var(--oemt-text); }
-.oemt-ctl-btn.oemt-ctl-main { background: var(--oemt-text); color: var(--oemt-raised); width: 34px; height: 34px; }
-.oemt-ctl-btn.oemt-ctl-main:hover { transform: scale(1.06); }
-.oemt-ctl-btn:focus-visible { outline: 2px solid var(--oemt-accent); outline-offset: 2px; }
 `;

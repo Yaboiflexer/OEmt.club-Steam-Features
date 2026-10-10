@@ -1,5 +1,4 @@
 local Discord = require("modules.discord_rpc")
-local NowPlaying = require("modules.now_playing")
 local Live = require("modules.integrations_live")
 local json = require("core.jsonlite")
 
@@ -130,47 +129,6 @@ T.test("Discord CLOSE and ERROR frames are reported", function()
     T.contains(c:status().error, "Invalid Client ID")
 end)
 
-T.test("Spotify titles: 'Artist - Song' while playing, nothing when paused or on an ad", function()
-    local s = NowPlaying.parse_spotify("Daft Punk - One More Time")
-    T.eq(s.artist, "Daft Punk"); T.eq(s.title, "One More Time")
-    T.eq(NowPlaying.parse_spotify("Artist - Song - Remastered 2011").title, "Song - Remastered 2011")
-    T.eq(NowPlaying.parse_spotify("Spotify Premium"), nil)
-    T.eq(NowPlaying.parse_spotify("Spotify Free"), nil)
-    T.eq(NowPlaying.parse_spotify("Spotify"), nil)
-    T.eq(NowPlaying.parse_spotify("Advertisement"), nil)
-    T.eq(NowPlaying.parse_spotify(""), nil)
-end)
-
-T.test("SoundCloud titles: only a playing track (▶) counts", function()
-    local s = NowPlaying.parse_soundcloud("\226\150\182 Night Drive by Synth Artist | Listen online for free on SoundCloud - Google Chrome")
-    T.eq(s.title, "Night Drive"); T.eq(s.artist, "Synth Artist")
-    local s2 = NowPlaying.parse_soundcloud("\226\150\182 Stream Song Name by Someone | Listen online for free on SoundCloud")
-    T.eq(s2.title, "Song Name")
-    T.eq(NowPlaying.parse_soundcloud("Night Drive by Synth Artist | Listen online for free on SoundCloud"), nil, "paused")
-    T.eq(NowPlaying.parse_soundcloud("YouTube - Google Chrome"), nil)
-    T.eq(NowPlaying.parse_soundcloud("\226\150\182 Discover | SoundCloud"), nil, "not a track page")
-end)
-
-T.test("now playing reads only enabled sources and only the right programs", function()
-    local asked
-    local function titles(exes)
-        asked = exes
-        return {
-            { exe = "spotify.exe", title = "Spotify Premium" },
-            { exe = "spotify.exe", title = "Artist - Track" },
-            { exe = "chrome.exe", title = "\226\150\182 Tune by Maker | Listen online for free on SoundCloud" },
-        }
-    end
-    local r = NowPlaying.read({ spotify = true, soundcloud = false }, titles)
-    T.eq(r.current.source, "spotify"); T.eq(r.current.title, "Track")
-    T.truthy(asked["spotify.exe"]); T.eq(asked["chrome.exe"], nil, "browsers not read when SoundCloud is off")
-    local r2 = NowPlaying.read({ spotify = false, soundcloud = true }, titles)
-    T.eq(r2.current.source, "soundcloud"); T.eq(r2.current.artist, "Maker")
-    local called = false
-    NowPlaying.read({}, function() called = true return {} end)
-    T.falsy(called, "no window is read when both are off")
-end)
-
 -- Controller ------------------------------------------------------------------------------------
 
 local function config(values)
@@ -185,8 +143,6 @@ local function live(values, opts)
         available = opts.available ~= false,
         pid = function() return 99 end, sleep = function() end,
         pipe_open = function(name) return srv.open(tonumber(name:match("(%d+)$"))) end,
-        window_titles = function() return opts.titles or {} end,
-        media_key = function(a) pressed[#pressed + 1] = a return true end,
     }
     local sessions = { active_list = function() return opts.games or {} end }
     local now = { t = 5000 }
@@ -210,22 +166,18 @@ T.test("presence shows the newest running game with its start time", function()
     T.eq(last_activity(srv2).buttons, nil, "button off")
 end)
 
-T.test("no game: no presence unless 'In Steam' is on; music only when allowed", function()
+T.test("no game: no presence unless 'In Steam' is on", function()
     local l, srv = live(ON)
     l:tick()
     T.eq(#srv.written, 2, "handshake, then a clear (removes any old status)")
     T.eq(last_activity(srv), nil)
     local vals = { ["integrations.discord.enabled"] = true, ["integrations.discord.client_id"] = APP_ID,
-                   ["integrations.discord.idle_presence"] = true, ["integrations.discord.show_music"] = true,
-                   ["integrations.spotify.enabled"] = true }
-    local l2, srv2 = live(vals, { titles = { { exe = "spotify.exe", title = "Band - Song" } } })
+                   ["integrations.discord.idle_presence"] = true }
+    local l2, srv2 = live(vals)
     l2:tick()
     local a = last_activity(srv2)
-    T.eq(a.details, "In Steam"); T.eq(a.state, "Listening to Song by Band")
-    local l3, srv3 = live({ ["integrations.discord.enabled"] = true, ["integrations.discord.client_id"] = APP_ID, ["integrations.discord.idle_presence"] = true,
-                            ["integrations.spotify.enabled"] = true }, { titles = { { exe = "spotify.exe", title = "Band - Song" } } })
-    l3:tick()
-    T.eq(last_activity(srv3).state, "OEmt.club", "song hidden unless show_music is on")
+    T.eq(a.details, "In Steam"); T.eq(a.state, "OEmt.club")
+    T.eq(a.buttons[1].url, "https://discord.gg/OEmt", "invite button also when idle")
 end)
 
 T.test("turning Discord off clears the status and disconnects", function()
@@ -260,29 +212,15 @@ T.test("test status shows for 15 seconds, then the real presence returns", funct
     T.eq(res, nil); T.contains(err, "Turn on")
 end)
 
-T.test("media keys: only known actions, only when a music integration is on", function()
-    local l, _, pressed = live({ ["integrations.spotify.enabled"] = true })
-    T.truthy(l:media("play_pause")); T.truthy(l:media("next")); T.truthy(l:media("previous"))
-    T.eq(table.concat(pressed, ","), "play_pause,next,previous")
-    local ok, err = l:media("volume_up")
-    T.eq(ok, nil); T.contains(err, "unknown")
-    local l2 = live({})
-    local ok2, err2 = l2:media("play_pause")
-    T.eq(ok2, nil); T.contains(err2, "Turn on")
-end)
-
 T.test("without Windows support everything stays off", function()
     local l, srv = live(ON, { available = false })
     local st = l:tick()
     T.falsy(st.available); T.eq(srv.opened, 0)
 end)
 
-T.test("win32 bindings load on Windows and read only the programs asked for", function()
+T.test("win32 bindings load on Windows", function()
     local w = require("core.win32")
     if not w.available then return end -- non-Windows test host
     T.eq(type(w.pid()), "number")
-    local titles = w.window_titles({ ["oemt-no-such-program.exe"] = true })
-    T.eq(#titles, 0)
-    T.eq(w.pipe_open("\\\\.\\pipe\\oemt-test-no-such-pipe"), nil)
-    T.falsy(w.media_key("not-a-key"))
+    T.eq(w.pipe_open([[\.\pipe\oemt-test-no-such-pipe]]), nil)
 end)

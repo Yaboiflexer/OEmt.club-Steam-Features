@@ -1,14 +1,12 @@
--- Live integrations: Discord Rich Presence and "now playing" (Spotify / SoundCloud), plus media keys.
--- Driven by tick(): the frontend calls it every few seconds, and a game starting or stopping calls it
--- at once. Every feature is opt-in (integrations.<id>.enabled) and nothing is sent anywhere except
+-- Discord Rich Presence, driven by tick(): the frontend calls it every few seconds, and a game starting
+-- or stopping calls it at once. Opt-in (integrations.discord.enabled); nothing is sent anywhere except
 -- to the Discord app running on this PC.
 local Discord = require("modules.discord_rpc")
-local NowPlaying = require("modules.now_playing")
 
 local M = {}
 
 M.TEST_SECONDS = 15
-M.MEDIA_ACTIONS = { play_pause = true, next = true, previous = true }
+M.INVITE = { label = "Join OEmt.club", url = "https://discord.gg/OEmt" }
 
 --- deps: { config, win32, sessions, clock, log }
 function M.new(deps)
@@ -23,12 +21,11 @@ function M.new(deps)
         pid = w.pid and w.pid() or 0,
         clock = self.clock, log = deps.log,
     })
-    self.now_playing = nil
     self.test_until = 0
     return self
 end
 
-function M:on(id) return self.d.config:get("integrations." .. id .. ".enabled") == true end
+function M:enabled() return self.d.config:get("integrations.discord.enabled") == true end
 function M:opt(key) return self.d.config:get("integrations.discord." .. key) end
 
 --- The game being played right now (newest running session), if any.
@@ -39,40 +36,30 @@ function M:current_game()
     return best
 end
 
---- What Discord should show, as { details, state, start } or nil for nothing.
-M.INVITE = { label = "Join OEmt.club", url = "https://discord.gg/OEmt" }
-
-function M:presence(np)
+--- What Discord should show, as { details, state, start, buttons } or nil for nothing.
+function M:presence()
     local buttons = self:opt("invite_button") ~= false and { M.INVITE } or nil
-    local music = self:opt("show_music") == true and np and np.title
-        and ("Listening to " .. np.title .. (np.artist and (" by " .. np.artist) or "")) or nil
     local game = self:current_game()
     if game then
-        return { details = game.name or ("App " .. tostring(game.appid)), state = music or "via OEmt.club", start = game.started_at, buttons = buttons }
+        return { details = game.name or ("App " .. tostring(game.appid)), state = "via OEmt.club", start = game.started_at, buttons = buttons }
     end
     if self:opt("idle_presence") == true then
-        return { details = "In Steam", state = music or "OEmt.club", buttons = buttons }
+        return { details = "In Steam", state = "OEmt.club", buttons = buttons }
     end
     return nil
 end
 
 function M:tick()
-    local enabled = { spotify = self:on("spotify"), soundcloud = self:on("soundcloud") }
-    local list_titles = self.win32.window_titles or function() return {} end
-    local okr, np = pcall(NowPlaying.read, enabled, list_titles)
-    self.now_playing = okr and np.current or nil
-
-    local discord_on = self:on("discord")
-    local client_id = tostring(self:opt("client_id") or "")
-    if discord_on and self.win32.available then
-        self.discord:connect(client_id)
+    local on = self:enabled()
+    if on and self.win32.available then
+        self.discord:connect(tostring(self:opt("client_id") or ""))
         if self.discord.conn then self.discord:poll() end
         if self.discord.ready then
             local act
             if self.clock() < self.test_until then
                 act = Discord.activity({ details = "OEmt.club", state = "Rich Presence is working", start = self.test_started })
             else
-                act = Discord.activity(self:presence(self.now_playing))
+                act = Discord.activity(self:presence())
             end
             self.discord:set_activity(act)
         end
@@ -81,15 +68,15 @@ function M:tick()
         self.discord:disconnect()
     end
     local st = self:status()
-    if discord_on then self:_log_discord(st.discord) end
+    if on then self:_log(st.discord) end
     return st
 end
 
---- Log Discord connection changes once (connected, lost, error), not every tick.
-function M:_log_discord(st)
+--- Log connection changes once (connected, lost, error), not every tick.
+function M:_log(st)
     local key = (st.connected and "connected") or (st.error or "off")
-    if key == self.last_discord_log then return end
-    self.last_discord_log = key
+    if key == self.last_log then return end
+    self.last_log = key
     if self.d.log then
         self.d.log:info({ module = "integrations", event = "discord", outcome = st.connected and "connected" or "disconnected",
                           msg = st.connected and "Rich Presence connected" or tostring(st.error or "off") })
@@ -101,35 +88,25 @@ function M:status()
     return {
         available = self.win32.available == true,
         discord = {
-            enabled = self:on("discord"),
+            enabled = self:enabled(),
             configured = Discord.valid_client_id(tostring(self:opt("client_id") or "")),
             connected = ds.connected,
-            error = self:on("discord") and ds.error or nil,
+            error = self:enabled() and ds.error or nil,
             retry_at = ds.retry_at,
             showing = self.discord.sent_key ~= nil and self.discord.sent_key ~= "none",
         },
-        now_playing = self.now_playing,
-        music_enabled = self:on("spotify") or self:on("soundcloud"),
     }
 end
 
 --- Show a test status for TEST_SECONDS (connects at once, ignoring the retry wait).
 function M:test()
-    if not self:on("discord") then return nil, "Turn on the Discord integration first" end
+    if not self:enabled() then return nil, "Turn on Discord Rich Presence first" end
     if not self.win32.available then return nil, "Discord Rich Presence needs Windows" end
     local ok, err = self.discord:connect(tostring(self:opt("client_id") or ""), true)
     if not ok then return nil, err end
     self.test_started = self.clock()
     self.test_until = self.test_started + M.TEST_SECONDS
     return self:tick()
-end
-
---- Play/pause, next or previous through Windows media keys.
-function M:media(action)
-    if not M.MEDIA_ACTIONS[action] then return nil, "unknown media action" end
-    if not (self:on("spotify") or self:on("soundcloud")) then return nil, "Turn on Spotify or SoundCloud first" end
-    if not (self.win32.media_key and self.win32.media_key(action)) then return nil, "Media keys are unavailable" end
-    return true
 end
 
 function M:shutdown()

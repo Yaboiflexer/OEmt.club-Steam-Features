@@ -7,8 +7,6 @@ import { api } from './api';
 import { startLifetimeTracking } from './games';
 import { startIpLogging } from './iplog';
 import * as live from './liveStore';
-import { openWeb } from './web';
-import { NowPlayingCard } from './views/NowPlaying';
 import { getCurrentTab, getIntegration, openPath, requestTab, setIntegration, setPathNavigator, subscribeNav } from './nav';
 import { DEFAULT_TAB, OEMT_ROUTE, OEMT_ROUTE_PATTERN, resolveRoute, routeToPath, startTarget } from './routes';
 import { createSteamWin, PopupManagerLike, WindowRouterLike } from './steamwin';
@@ -84,7 +82,7 @@ const TopbarFallback: FC = () => {
 		}}>
 			<span style={{ padding: '6px 8px', opacity: 0.6 }}>OEMT.CLUB</span>
 			{items.map((it) => (
-				<button key={it.id} onClick={() => (it.kind === 'tab' ? openTab(it.id) : it.kind === 'web' ? it.url && openWeb(it.url) : it.route && Navigation.Navigate(it.route))}
+				<button key={it.id} onClick={() => (it.kind === 'tab' ? openTab(it.id) : it.route && Navigation.Navigate(it.route))}
 					style={{ appearance: 'none', border: 0, background: 'none', color: '#dcdedf', padding: '6px 8px', cursor: 'pointer', font: 'inherit', textTransform: 'uppercase' }}>
 					{it.label}
 				</button>
@@ -104,7 +102,6 @@ const QuickPanel: FC = () => {
 					{o.data ? <Pill tone={o.data.health}>{o.data.health}</Pill> : o.error ? <Pill tone="fail">backend offline</Pill> : <Pill>checking</Pill>}
 					{o.data && <span className="oemt-muted">{o.data.active_sessions.length ? `Playing ${o.data.active_sessions[0].name ?? o.data.active_sessions[0].appid}` : `${o.data.library?.apps ?? 0} games`}</span>}
 				</div>
-				<NowPlayingCard visible compact />
 				<button className="oemt-btn oemt-primary" onClick={() => openTab(o.data?.settings.default_tab ?? DEFAULT_TAB)}>Open OEmt.club</button>
 			</div>
 		</div>
@@ -147,7 +144,6 @@ export default definePlugin(() => {
 			mainDocument: () => steamwin.mainWindow()?.document,
 			openTab,
 			openRoute: (route) => Navigation.Navigate(route),
-			openWeb: (url) => { openWeb(url); },
 			steamLabels,
 			log: (event, msg) => api.log('info', event, msg),
 		},

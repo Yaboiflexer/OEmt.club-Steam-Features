@@ -2,7 +2,7 @@
 // a slow background tick keeps Discord's status current and reconnects after Discord restarts, and a
 // fast tick runs while a visible view shows the live state. Requests never overlap.
 import { useEffect, useState } from 'react';
-import { api, LiveStatus, MediaAction } from './api';
+import { api, LiveStatus } from './api';
 
 const SLOW_MS = 15_000;
 const FAST_MS = 4_000;
@@ -85,12 +85,6 @@ export function useLive(visible: boolean): { status?: LiveStatus; error?: string
 		};
 	}, [visible]);
 	return { status, error: lastError };
-}
-
-/** Media key, then re-read the title shortly after (players update their window title a moment later). */
-export async function media(action: MediaAction): Promise<void> {
-	await api.mediaControl(action);
-	setTimeout(() => refresh(), 600);
 }
 
 export async function discordTest(): Promise<void> {
