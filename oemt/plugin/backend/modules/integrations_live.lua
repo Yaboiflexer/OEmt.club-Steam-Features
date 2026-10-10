@@ -45,7 +45,9 @@ function M:presence(np)
         and ("Listening to " .. np.title .. (np.artist and (" by " .. np.artist) or "")) or nil
     local game = self:current_game()
     if game then
-        return { details = game.name or ("App " .. tostring(game.appid)), state = music or "via OEmt.club", start = game.started_at }
+        return { details = game.name or ("App " .. tostring(game.appid)), state = music or "via OEmt.club", start = game.started_at,
+                 buttons = (self:opt("store_button") ~= false and tostring(game.appid):match("^%d+$") and tonumber(game.appid) > 0)
+                     and { { label = "View on Steam", url = "https://store.steampowered.com/app/" .. game.appid } } or nil }
     end
     if self:opt("idle_presence") == true then
         return { details = "In Steam", state = music or "OEmt.club" }

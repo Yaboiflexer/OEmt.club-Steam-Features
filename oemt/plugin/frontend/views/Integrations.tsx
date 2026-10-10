@@ -201,6 +201,9 @@ export const IntegrationsView: FC = () => {
 						<Toggle checked={v['integrations.discord.show_music'] === true} disabled={busy || !on('discord')} onChange={(x) => save('integrations.discord.show_music', x)}>
 							Show the song I'm listening to
 						</Toggle>
+						<Toggle checked={v['integrations.discord.store_button'] !== false} disabled={busy || !on('discord')} onChange={(x) => save('integrations.discord.store_button', x)}>
+							Add a "View on Steam" button for the game
+						</Toggle>
 						{on('discord') && d?.error && <div className="oemt-small" style={{ color: 'var(--oemt-warn)' }}>{d.error}</div>}
 						{testNote && <div className="oemt-small oemt-muted">{testNote}</div>}
 					</Card>

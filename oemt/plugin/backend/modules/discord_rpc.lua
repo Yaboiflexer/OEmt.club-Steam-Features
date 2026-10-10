@@ -58,6 +58,16 @@ function M.activity(presence)
     local a = { details = field(presence.details), state = field(presence.state) }
     if not a.details and not a.state then return nil end
     if presence.start then a.timestamps = { start = math.floor(presence.start) } end
+    -- Up to 2 link buttons (label 1-32 chars, https URL) that other people can click on the status.
+    if type(presence.buttons) == "table" then
+        local b = {}
+        for _, x in ipairs(presence.buttons) do
+            if #b < 2 and type(x.label) == "string" and type(x.url) == "string" and x.url:match("^https://") then
+                b[#b + 1] = { label = x.label:sub(1, 32), url = x.url:sub(1, 512) }
+            end
+        end
+        if #b > 0 then a.buttons = b end
+    end
     return a
 end
 

@@ -48,6 +48,7 @@ M.fields = {
                                            label = "Discord Application ID (from discord.com/developers; public, not a secret)", group = "integrations" },
     ["integrations.discord.idle_presence"] = { type = "bool", default = false, label = "Discord: show \"In Steam\" when no game is running", group = "integrations" },
     ["integrations.discord.show_music"] = { type = "bool", default = false, label = "Discord: show the song you are listening to", group = "integrations" },
+    ["integrations.discord.store_button"] = { type = "bool", default = true, label = "Discord: add a \"View on Steam\" button for the game", group = "integrations" },
     ["integrations.spotify.enabled"]    = { type = "bool", default = false, label = "Spotify", group = "integrations" },
     ["integrations.soundcloud.enabled"] = { type = "bool", default = false, label = "SoundCloud", group = "integrations" },
     ["integrations.insights.enabled"]   = { type = "bool", default = false, label = "Insights.gg", group = "integrations" },

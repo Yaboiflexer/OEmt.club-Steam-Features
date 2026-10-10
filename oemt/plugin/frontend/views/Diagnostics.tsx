@@ -1,7 +1,8 @@
 import { FC, useEffect, useRef, useState } from 'react';
 import { api, LogLevel, SelfTest } from '../api';
-import { useShell } from '../shell';
+import { useShell, useTabActive } from '../shell';
 import { getIntegration, listenerCount, subscribeNav } from '../nav';
+import * as live from '../liveStore';
 import { PerformanceView } from './Performance';
 import { Empty, ErrorText, Panel, Pill, Tone, useAsync } from '../ui';
 
@@ -115,6 +116,7 @@ export const DiagnosticsView: FC = () => {
 			)}
 
 			<SteamIntegrationPanel />
+			<LiveIntegrationsPanel />
 
 			<h3 ref={perfRef} className="oemt-label" style={{ marginTop: 6 }}>Performance</h3>
 			<PerformanceView />
@@ -187,6 +189,30 @@ const SteamIntegrationPanel: FC = () => {
 					<tr><td>Routes</td><td><Pill tone={s.routes.length === 1 ? 'pass' : 'warn'}>{s.routes.length}</Pill> <span className="oemt-muted">{s.routes.join(', ') || 'none'}</span></td></tr>
 					<tr><td>Top bar ids dropped</td><td><span className="oemt-muted">{s.droppedTopbarIds.length ? s.droppedTopbarIds.join(', ') : 'none (no duplicates)'}</span></td></tr>
 					<tr><td>Navigation listeners</td><td><span className="oemt-muted">{listenerCount()}</span></td></tr>
+				</tbody>
+			</table>
+		</Panel>
+	);
+};
+
+/** Live integrations as the backend sees them right now (refreshes every few seconds while visible). */
+const LiveIntegrationsPanel: FC = () => {
+	const { status: s, error } = live.useLive(useTabActive());
+	if (error) return <Panel label="Live integrations"><span className="oemt-muted">{error}</span></Panel>;
+	if (!s) return null;
+	const d = s.discord;
+	return (
+		<Panel label="Live integrations">
+			<table className="oemt-table">
+				<tbody>
+					<tr><td>Windows bindings</td><td><Pill tone={s.available ? 'pass' : 'warn'}>{s.available ? 'Loaded' : 'Unavailable'}</Pill></td></tr>
+					<tr><td>Discord</td><td>{!d.enabled ? <span className="oemt-muted">Off</span> : (
+						<><Pill tone={d.connected ? 'pass' : 'warn'}>{d.connected ? 'Connected' : 'Not connected'}</Pill> <span className="oemt-muted">
+							{d.connected ? (d.showing ? 'status is set' : 'nothing to show') : d.error ?? ''}{d.retry_at ? ` · retry ${new Date(d.retry_at * 1000).toLocaleTimeString()}` : ''}</span></>
+					)}</td></tr>
+					<tr><td>Now playing</td><td>{!s.music_enabled ? <span className="oemt-muted">Off</span> : s.now_playing
+						? <span>{s.now_playing.title}{s.now_playing.artist ? ` · ${s.now_playing.artist}` : ''} <span className="oemt-muted">({s.now_playing.source})</span></span>
+						: <span className="oemt-muted">Nothing playing</span>}</td></tr>
 				</tbody>
 			</table>
 		</Panel>
