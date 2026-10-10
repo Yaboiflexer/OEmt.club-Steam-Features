@@ -35,9 +35,9 @@ M.fields = {
                                  label = "Items in Steam's top bar (comma-separated; empty = none)", group = "topbar" },
     ["ui.open_on_start"]     = { type = "bool", default = true, label = "Open OEmt.club when Steam starts", group = "appearance" },
     -- Start page: an OEmt tab or one of Steam's own pages (opened through Steam's steam:// links).
-    ["ui.default_tab"]       = { type = "enum", values = { "sessions", "settings", "diagnostics", "integrations",
+    ["ui.default_tab"]       = { type = "enum", values = { "sessions", "media", "settings", "diagnostics", "integrations",
                                                            "steam_store", "steam_library", "steam_community", "steam_profile" },
-                                 labels = { sessions = "Sessions", settings = "Settings", diagnostics = "Diagnostics",
+                                 labels = { sessions = "Sessions", media = "Media", settings = "Settings", diagnostics = "Diagnostics",
                                             integrations = "Integrations", steam_store = "Steam Store", steam_library = "Steam Library",
                                             steam_community = "Steam Community", steam_profile = "My Steam profile" },
                                  default = "sessions", label = "Start page when Steam opens", group = "appearance" },

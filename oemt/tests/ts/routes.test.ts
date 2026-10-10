@@ -11,8 +11,8 @@ describe('URL paths', () => {
 		}
 	});
 
-	test('pages: Sessions, Settings, Diagnostics, Integrations; Sessions is the start page', () => {
-		expect(TAB_IDS).toEqual(['sessions', 'settings', 'diagnostics', 'integrations']);
+	test('pages: Sessions, Media, Settings, Diagnostics, Integrations; Sessions is the start page', () => {
+		expect(TAB_IDS).toEqual(['sessions', 'media', 'settings', 'diagnostics', 'integrations']);
 		expect(DEFAULT_TAB).toBe('sessions');
 		expect(pathToRoute(undefined)).toEqual({ tab: 'sessions', redirected: false });
 	});
@@ -74,7 +74,7 @@ describe('start page', () => {
 	});
 
 	test('every start page in the settings list is handled', () => {
-		const choices = ['sessions', 'settings', 'diagnostics', 'integrations', 'steam_store', 'steam_library', 'steam_community', 'steam_profile'];
+		const choices = ['sessions', 'media', 'settings', 'diagnostics', 'integrations', 'steam_store', 'steam_library', 'steam_community', 'steam_profile'];
 		for (const c of choices) {
 			const t = startTarget(c);
 			if (c.startsWith('steam_')) expect(t.kind).toBe('steam');

@@ -8,6 +8,7 @@
 import { FC } from 'react';
 import type { TabId } from './routes';
 import { SessionsView } from './views/Sessions';
+import { MediaView } from './views/Media';
 import { SettingsView } from './views/Settings';
 import { DiagnosticsView } from './views/Diagnostics';
 import { IntegrationsView } from './views/Integrations';
@@ -20,6 +21,7 @@ export interface TabDef {
 
 export const TABS: TabDef[] = [
 	{ id: 'sessions', label: 'Sessions', Component: SessionsView },
+	{ id: 'media', label: 'Media', Component: MediaView },
 	{ id: 'settings', label: 'Settings', Component: SettingsView },
 	{ id: 'diagnostics', label: 'Diagnostics', Component: DiagnosticsView },
 	{ id: 'integrations', label: 'Integrations', Component: IntegrationsView },

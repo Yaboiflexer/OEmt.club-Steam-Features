@@ -166,4 +166,20 @@ export const CSS = `
 .oemt-np-artist { font-size: 12px; }
 .oemt-icon-btn { width: 32px; height: 28px; padding: 0; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; }
 .oemt-small-btn { padding: 4px 10px; font-size: 12px; }
+
+/* Media page */
+.oemt-media { display: grid; grid-template-columns: 300px 1fr; gap: var(--oemt-gap); height: 100%; min-height: 0; }
+.oemt-media-side { display: flex; flex-direction: column; gap: var(--oemt-s3); min-height: 0; }
+.oemt-media-list { flex: 1; overflow-y: auto; min-height: 120px; display: flex; flex-direction: column; gap: 2px; }
+.oemt-media-item { display: flex; align-items: center; gap: var(--oemt-s2); padding: 6px 8px; border-radius: var(--oemt-radius); cursor: pointer; }
+.oemt-media-item:hover { background: var(--oemt-hover); }
+.oemt-media-item.oemt-selected { background: color-mix(in srgb, var(--oemt-accent) 22%, transparent); }
+.oemt-media-item:focus-visible { outline: 2px solid var(--oemt-accent); outline-offset: -2px; }
+.oemt-media-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.oemt-src-spotify { background: #1db954; }
+.oemt-src-soundcloud { background: #ff5500; }
+.oemt-media-player { display: flex; flex-direction: column; min-height: 0; overflow-y: auto; }
+.oemt-media-title { flex: 1; max-width: 420px; font-weight: 700; }
+.oemt-media-frame { width: 100%; border: 0; border-radius: var(--oemt-radius); background: var(--oemt-raised); flex: none; }
+@media (max-width: 900px) { .oemt-media { grid-template-columns: 1fr; } }
 `;

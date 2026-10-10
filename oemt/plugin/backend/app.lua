@@ -13,6 +13,7 @@ local Sessions     = require("modules.sessions")
 local integrations = require("modules.integrations")
 local IntegrationsLive = require("modules.integrations_live")
 local Insights = require("modules.insights")
+local Media = require("modules.media")
 local diagnostics  = require("modules.diagnostics")
 local IpLog        = require("modules.ip_log")
 
@@ -154,6 +155,13 @@ function M.new(services)
     app.insights = Insights.new({ getenv = services.getenv, exists = services.exists, exec = services.exec,
                                   scan_files = services.scan_files, win32 = services.win32, config = app.config,
                                   clock = services.clock, log = app.log })
+    -- Media page: saved Spotify / SoundCloud links for the embedded players
+    app.media = Media.new({ clock = services.clock, store = (data_dir and data_ok) and {
+        load = function() return services.read_file(util.join(data_dir, "media.json")) end,
+        save = function(text) return util.write_file_atomic(util.join(data_dir, "media.json"), text) end,
+    } or nil })
+    app.media:load()
+
     -- Optional: start Insights Capture when a game starts, so recording is ready.
     app.events:on("game.started", function()
         local ok, err = pcall(app.insights.on_game_started, app.insights)
@@ -246,6 +254,22 @@ function M.attach_api(app)
         local ok, err = app.live:media(tostring(action or ""))
         if not ok then error(err) end
         return true
+    end)
+    wrap("media_list", function() return app.media:list() end)
+    wrap("media_add", function(url, title)
+        local it, err = app.media:add(url, title)
+        if not it then error(err) end
+        return app.media:list()
+    end)
+    wrap("media_remove", function(id)
+        local ok, err = app.media:remove(tostring(id or ""))
+        if not ok then error(err) end
+        return app.media:list()
+    end)
+    wrap("media_rename", function(id, title)
+        local ok, err = app.media:rename(tostring(id or ""), title)
+        if not ok then error(err) end
+        return app.media:list()
     end)
     wrap("insights_status", function(force) return app.insights:status(force == true) end)
     wrap("insights_open", function()

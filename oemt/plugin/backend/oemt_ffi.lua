@@ -125,3 +125,24 @@ function OEmtInsightsOpen() return call("insights_open") end
 ---@param path string
 ---@return table
 function OEmtInsightsReveal(path) return call("insights_reveal", path) end
+
+---@ffi
+---@return table
+function OEmtMediaList() return call("media_list") end
+
+---@ffi
+---@param url string
+---@param title string
+---@return table
+function OEmtMediaAdd(url, title) return call("media_add", url, title) end
+
+---@ffi
+---@param id string
+---@return table
+function OEmtMediaRemove(id) return call("media_remove", id) end
+
+---@ffi
+---@param id string
+---@param title string
+---@return table
+function OEmtMediaRename(id, title) return call("media_rename", id, title) end

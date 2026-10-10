@@ -36,6 +36,7 @@ export interface InsightsStatus {
 	installed: boolean; variant?: string; running?: boolean; enabled: boolean; auto_start: boolean;
 	recordings_dir?: string; recordings: Recording[]; recordings_total: number;
 }
+export interface MediaItem { id: string; source: 'spotify' | 'soundcloud'; kind: string; ref: string; url: string; title: string; added_at: number }
 export type MediaAction = 'play_pause' | 'next' | 'previous';
 /** Live state from backend/modules/integrations_live.lua. */
 export interface LiveStatus {
@@ -126,6 +127,10 @@ export const api = {
 		const s = await call<InsightsStatus>('insights_status', backend.OEmtInsightsStatus(force));
 		return { ...s, recordings: arr(s.recordings) };
 	},
+	mediaList: async () => arr<MediaItem>(await call<unknown>('media_list', backend.OEmtMediaList())),
+	mediaAdd: async (url: string, title = '') => arr<MediaItem>(await call<unknown>('media_add', backend.OEmtMediaAdd(url, title))),
+	mediaRemove: async (id: string) => arr<MediaItem>(await call<unknown>('media_remove', backend.OEmtMediaRemove(id))),
+	mediaRename: async (id: string, title: string) => arr<MediaItem>(await call<unknown>('media_rename', backend.OEmtMediaRename(id, title))),
 	insightsOpen: () => call<boolean>('insights_open', backend.OEmtInsightsOpen()),
 	/** Show a recording in Explorer; empty path opens the recordings folder. */
 	insightsReveal: (path = '') => call<boolean>('insights_reveal', backend.OEmtInsightsReveal(path)),

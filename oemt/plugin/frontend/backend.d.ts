@@ -29,4 +29,8 @@ declare const backend: {
 	OEmtInsightsStatus(force: boolean): FfiResult;
 	OEmtInsightsOpen(): FfiResult;
 	OEmtInsightsReveal(path: string): FfiResult;
+	OEmtMediaList(): FfiResult;
+	OEmtMediaAdd(url: string, title: string): FfiResult;
+	OEmtMediaRemove(id: string): FfiResult;
+	OEmtMediaRename(id: string, title: string): FfiResult;
 };

@@ -3,7 +3,7 @@
 // Tabs are the pages inside the OEmt.club screen. Old tab ids from earlier versions (saved in
 // ui.default_tab / ui.topbar_items or used by other code) are redirected so nothing lands on a blank page.
 
-export type TabId = 'sessions' | 'settings' | 'diagnostics' | 'integrations';
+export type TabId = 'sessions' | 'media' | 'settings' | 'diagnostics' | 'integrations';
 
 /** Where bare /oemt, unknown ids and removed pages land. */
 export const DEFAULT_TAB: TabId = 'sessions';
@@ -26,7 +26,7 @@ export const LEGACY_REDIRECTS: Record<string, Route> = {
 const legacyOf = (id: string): Route | undefined =>
 	Object.prototype.hasOwnProperty.call(LEGACY_REDIRECTS, id) ? LEGACY_REDIRECTS[id] : undefined;
 
-export const TAB_IDS: TabId[] = ['sessions', 'settings', 'diagnostics', 'integrations'];
+export const TAB_IDS: TabId[] = ['sessions', 'media', 'settings', 'diagnostics', 'integrations'];
 
 /** Accepts "tab", "tab:sub" or a legacy id; anything unknown falls back to DEFAULT_TAB. */
 export function resolveRoute(id: string | undefined | null): Route {
@@ -46,6 +46,7 @@ export interface TopbarItem { id: string; label: string; kind: 'tab' | 'route' |
  *  by default (it stays reachable from the health badge). */
 export const TOPBAR_CHOICES: TopbarItem[] = [
 	{ id: 'sessions', label: 'Sessions', kind: 'tab' },
+	{ id: 'media', label: 'Media', kind: 'tab' },
 	{ id: 'settings', label: 'Settings', kind: 'tab' },
 	{ id: 'diagnostics', label: 'Diagnostics', kind: 'tab' },
 	{ id: 'integrations', label: 'Integrations', kind: 'tab' },
