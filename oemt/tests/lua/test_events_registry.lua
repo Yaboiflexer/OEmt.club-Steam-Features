@@ -1,0 +1,70 @@
+local Events = require("core.events")
+local Registry = require("core.registry")
+local Log = require("core.log")
+
+T.test("events deliver, isolate failures, unsubscribe", function()
+    local ev = Events.new(Log.new())
+    local got = {}
+    local off = ev:on("x", function(p) got[#got + 1] = p end)
+    ev:on("x", function() error("bad handler") end)
+    ev:on("*", function(_, name) got[#got + 1] = "*" .. name end)
+    local delivered, failed = ev:emit("x", 1)
+    T.eq(delivered, 2); T.eq(failed, 1); T.eq(got[1], 1); T.eq(got[2], "*x")
+    T.truthy(off())
+    ev:emit("x", 2)
+    T.eq(#got, 3)
+end)
+
+local function reg() return Registry.new({ log = Log.new() }) end
+
+T.test("starts modules in dependency order", function()
+    local r, order = reg(), {}
+    r:register({ id = "c", deps = { "b" }, start = function() order[#order + 1] = "c" end })
+    r:register({ id = "a", start = function() order[#order + 1] = "a" end })
+    r:register({ id = "b", deps = { "a" }, start = function() order[#order + 1] = "b" end })
+    r:start_all()
+    T.eq(table.concat(order, ","), "a,b,c")
+end)
+
+T.test("a failing module is isolated and its dependents are blocked", function()
+    local r = reg()
+    r:register({ id = "bad", start = function() error("kaboom") end })
+    r:register({ id = "child", deps = { "bad" } })
+    r:register({ id = "fine" })
+    r:start_all()
+    T.eq(r.state.bad.status, "failed"); T.contains(r.state.bad.error, "kaboom")
+    T.eq(r.state.child.status, "blocked")
+    T.eq(r.state.fine.status, "started")
+end)
+
+T.test("missing dependencies and cycles are reported, not fatal", function()
+    local r = reg()
+    r:register({ id = "x", deps = { "y" } })
+    r:register({ id = "y", deps = { "x" } })
+    r:register({ id = "z", deps = { "ghost" } })
+    r:register({ id = "ok" })
+    r:start_all()
+    T.eq(r.state.x.status, "blocked"); T.eq(r.state.y.status, "blocked")
+    T.contains(r.state.z.error, "missing dependency: ghost")
+    T.eq(r.state.ok.status, "started")
+end)
+
+T.test("registration validation", function()
+    local r = reg()
+    T.falsy(r:register({ id = "Bad Id" }))
+    T.truthy(r:register({ id = "dup" }))
+    T.falsy(r:register({ id = "dup" }))
+end)
+
+T.test("disabled gate, health and stop", function()
+    local r, stopped = reg(), false
+    r:register({ id = "off", enabled = function() return false end })
+    r:register({ id = "on", stop = function() stopped = true end, health = function() return { status = "degraded", detail = "meh" } end })
+    r:register({ id = "throws_health", health = function() error("nope") end })
+    r:start_all()
+    local h = {}
+    for _, x in ipairs(r:health()) do h[x.id] = x end
+    T.eq(h.off.status, "disabled"); T.eq(h.on.status, "degraded"); T.eq(h.throws_health.status, "error")
+    r:stop_all()
+    T.truthy(stopped); T.eq(r.state.on.status, "stopped")
+end)

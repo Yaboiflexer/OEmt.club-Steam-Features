@@ -1,0 +1,84 @@
+-- OEmt.club — Millennium plugin entry point.
+-- Wires the real Millennium/Steam services into the OEmt app and exposes the FFI surface.
+local logger     = require("logger")
+local millennium = require("millennium")
+local fs         = require("fs")
+local util       = require("core.util")
+local App        = require("app")
+
+local function resolve_data_dir()
+    local cfg = os.getenv("MILLENNIUM__CONFIG_PATH")
+    if not cfg or cfg == "" then
+        local install = millennium.get_install_path()
+        if install and install ~= "" then cfg = util.join(install, "config") end
+    end
+    if not cfg or cfg == "" then return nil end
+    return util.join(cfg, "oemt")
+end
+
+local function production_services()
+    local platform = util.platform()
+    return {
+        platform = platform,
+        millennium_version = millennium.version(),
+        cmp_version = function(a, b) return millennium.cmp_version(a, b) end,
+        steam_path = util.norm_path(millennium.steam_path()),
+        data_dir = resolve_data_dir(),
+        mirror_logger = logger,
+        getenv = os.getenv,
+        read_file = util.read_file,
+        exists = function(p) return fs.exists(p) end,
+        mkdirs = function(p) return fs.create_directories(p) end,
+        dir_writable = function(dir)
+            local probe = util.join(dir, ".write-probe")
+            local f = io.open(probe, "wb")
+            if not f then return false end
+            f:write("1"); f:close()
+            os.remove(probe)
+            return true
+        end,
+        list_dir = function(p)
+            local entries, err = fs.list(p)
+            if not entries then return nil, err end
+            local names = {}
+            for _, e in ipairs(entries) do if e.is_file then names[#names + 1] = e.name end end
+            return names
+        end,
+        config_store = {
+            get_all = function() return millennium.config.get_all() end,
+            set = function(k, v) return millennium.config.set(k, v) end,
+            delete = function(k) return millennium.config.delete(k) end,
+        },
+    }
+end
+
+local app_ok, app_or_err = pcall(App.new, production_services())
+OEMT_APP = app_ok and app_or_err or nil
+OEMT_BOOT_ERROR = (not app_ok) and tostring(app_or_err) or nil
+if not app_ok then logger:error("[OEmt] boot failed: " .. OEMT_BOOT_ERROR) end
+
+-- exposes the global ---@ffi functions
+require("ffi")
+
+local function on_load()
+    if OEMT_APP then
+        -- keep in-memory config in sync with changes made outside OEmt (e.g. Millennium settings UI)
+        millennium.config.on_change(function(key, value) OEMT_APP.config:apply_external(key, value) end)
+        logger:info("[OEmt] loaded " .. App.VERSION .. " on Millennium " .. millennium.version())
+    end
+    millennium.ready()
+end
+
+local function on_frontend_loaded()
+    if OEMT_APP then OEMT_APP.log:info({ module = "startup", event = "frontend_loaded" }) end
+end
+
+local function on_unload()
+    if OEMT_APP then pcall(App.shutdown, OEMT_APP) end
+end
+
+return {
+    on_load = on_load,
+    on_unload = on_unload,
+    on_frontend_loaded = on_frontend_loaded,
+}
