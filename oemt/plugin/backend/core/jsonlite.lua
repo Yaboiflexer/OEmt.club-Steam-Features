@@ -41,7 +41,9 @@ local function encode_value(v, depth, seen)
         seen[v] = true
         local out = {}
         if is_array(v) then
-            for i = 1, #v do out[i] = encode_value(v[i], depth + 1, seen) end
+            local mt = getmetatable(v)
+            local n = (mt and mt.n) or #v
+            for i = 1, n do out[i] = encode_value(v[i], depth + 1, seen) end
             seen[v] = nil
             return "[" .. table.concat(out, ",") .. "]"
         end
@@ -143,13 +145,17 @@ decode_value = function(str, i, depth)
             i = i + 1
         end
     elseif c == "[" then
-        local arr = setmetatable({}, { __jsontype = "array" })
+        -- Track the length explicitly: `arr[#arr + 1] = nil` is a no-op, so a
+        -- null element would otherwise shift every later element left.
+        local mt = { __jsontype = "array", n = 0 }
+        local arr = setmetatable({}, mt)
         i = skip_ws(str, i + 1)
         if str:sub(i, i) == "]" then return arr, i + 1 end
         while true do
             local val
             val, i = decode_value(str, i, depth + 1)
-            arr[#arr + 1] = val
+            mt.n = mt.n + 1
+            arr[mt.n] = val
             i = skip_ws(str, i)
             local d = str:sub(i, i)
             if d == "]" then return arr, i + 1 end

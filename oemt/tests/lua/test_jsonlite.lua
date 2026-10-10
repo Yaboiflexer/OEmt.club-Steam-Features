@@ -29,6 +29,11 @@ T.test("decodes nested documents", function()
     T.eq(type(v.b), "table")
 end)
 
+T.test("keeps null positions in arrays on round-trip", function()
+    T.eq(json.encode(json.decode("[1,null,3]")), "[1,null,3]")
+    T.eq(json.encode(json.decode("[null]")), "[null]")
+end)
+
 T.test("rejects malformed input without throwing", function()
     for _, bad in ipairs({ "", "{", "[1,]", '{"a" 1}', "nul", '"unterminated', "{} extra", 42 }) do
         local v, err = json.decode(bad)
