@@ -53,11 +53,15 @@ class millennium_updater
     void set_ipc_main(std::shared_ptr<ipc_main> ipc_main);
 
   private:
-#ifndef OEMT_RELEASES_API_URL
-#define OEMT_RELEASES_API_URL ""
+#ifndef OEMT_RELEASES_REPO
+#define OEMT_RELEASES_REPO ""
 #endif
-    /** OEmt.club: set by the OEMT_RELEASES_API_URL CMake cache variable; empty disables self-update. */
-    static constexpr const char* GITHUB_API_URL = OEMT_RELEASES_API_URL;
+    /** OEmt.club: "owner/repo" from the OEMT_RELEASES_REPO CMake cache variable; empty disables self-update. */
+    static constexpr const char* RELEASES_REPO = OEMT_RELEASES_REPO;
+    static bool updates_configured() { return RELEASES_REPO[0] != '\0'; }
+    static std::string releases_api_url() { return std::string("https://api.github.com/repos/") + RELEASES_REPO + "/releases"; }
+    /** Only assets under this prefix may be downloaded and installed. */
+    static std::string download_prefix() { return std::string("https://github.com/") + RELEASES_REPO + "/releases/download/"; }
 
     std::string parse_version(const std::string& version);
     void update_impl(const std::string& downloadUrl, const size_t downloadSize);

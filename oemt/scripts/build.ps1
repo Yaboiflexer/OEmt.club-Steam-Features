@@ -5,7 +5,9 @@
 #
 # Needs: Visual Studio 2022 Build Tools (C++ workload), CMake, Bun, Rust. Never touches the Steam
 # folder: MILLENNIUM_BUILD_TO_STEAM_PATH is forced OFF. Output: dist\oemt-club-<version>-<time>\ and .zip
-param([switch]$SkipTests)
+#   -ReleasesRepo owner/repo   enables self-update from that public GitHub repo's releases
+#                              (default: $env:OEMT_RELEASES_REPO; empty = self-update off)
+param([switch]$SkipTests, [string]$ReleasesRepo = $env:OEMT_RELEASES_REPO)
 $ErrorActionPreference = 'Stop'
 $root = (Resolve-Path "$PSScriptRoot\..\..").Path
 Set-Location $root
@@ -31,7 +33,8 @@ foreach ($tool in 'cl', 'cmake', 'ninja', 'bun', 'cargo') {
 
 # --- core -------------------------------------------------------------------------------------
 Step 'Core (CMake windows-release)'
-Run 'cmake configure' { cmake --preset=windows-release -DMILLENNIUM_RUN_TESTS_ON_BUILD=OFF -DMILLENNIUM_BUILD_TO_STEAM_PATH=OFF }
+Write-Host "Self-update source: $(if ($ReleasesRepo) { $ReleasesRepo } else { 'none (self-update off)' })"
+Run 'cmake configure' { cmake --preset=windows-release -DMILLENNIUM_RUN_TESTS_ON_BUILD=OFF -DMILLENNIUM_BUILD_TO_STEAM_PATH=OFF "-DOEMT_RELEASES_REPO=$ReleasesRepo" }
 Run 'cmake build' { cmake --build build }
 
 # --- plugin -----------------------------------------------------------------------------------
@@ -58,16 +61,18 @@ if (-not $SkipTests) {
 
 # --- package ----------------------------------------------------------------------------------
 Step 'Package'
-$version = (Get-Content scripts\version)[1].Trim()
-$name = "oemt-club-$version-$(Get-Date -Format yyyyMMdd-HHmm)"
+$version = (Get-Content oemt\VERSION -TotalCount 1).Trim()
+# Release asset name the self-updater looks for: oemt-club-<tag>-windows-x86_64.zip (tag = v<version>).
+$name = "oemt-club-v$version-windows-x86_64"
 $out = Join-Path $root "dist\$name"
+if (Test-Path $out) { Remove-Item -Recurse -Force $out -Confirm:$false }
 New-Item -ItemType Directory -Force "$out\oemt\lib", "$out\oemt\bin", "$out\oemt\plugins" | Out-Null
+# The zip mirrors the Steam folder exactly: the updater extracts it straight over <Steam>.
 Copy-Item build\oemt.bootstrap64.dll "$out\wsock32.dll"   # Steam loads this by name; it loads oemt\lib\oemt.dll
 Copy-Item build\oemt.dll, build\oemt.hhx64.dll "$out\oemt\lib\"
 Copy-Item build\oemt.luavm64.exe, build\oemt.crashhandler64.exe "$out\oemt\bin\"
 Copy-Item build\oemt-plugin\club.oemt.core.star "$out\oemt\plugins\"
-Copy-Item LICENSE.md, NOTICE.md $out
-Copy-Item oemt\scripts\INSTALL.txt $out
+Copy-Item LICENSE.md, NOTICE.md, oemt\scripts\INSTALL.txt "$out\oemt\"
 Compress-Archive -Path "$out\*" -DestinationPath "$out.zip" -Force
 
 Write-Host "`nBuilt $out.zip" -ForegroundColor Green

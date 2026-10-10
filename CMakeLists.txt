@@ -44,10 +44,23 @@ endif()
 set(OEMT_INSTALL_DIR_NAME "oemt")
 add_compile_definitions(OEMT_INSTALL_DIR_NAME="${OEMT_INSTALL_DIR_NAME}")
 
-# OEmt.club self-update source (a GitHub "releases" API URL). Empty disables self-update,
-# so an OEmt.club build never installs upstream Millennium releases over itself.
-set(OEMT_RELEASES_API_URL "" CACHE STRING "GitHub releases API URL for OEmt.club self-updates; empty disables self-update")
-add_compile_definitions(OEMT_RELEASES_API_URL="${OEMT_RELEASES_API_URL}")
+# OEmt.club product version (oemt/VERSION). Separate from MILLENNIUM_VERSION, which plugins use for
+# compatibility checks; the self-updater compares release tags against this one.
+file(STRINGS "${CMAKE_SOURCE_DIR}/oemt/VERSION" OEMT_VERSION LIMIT_COUNT 1)
+string(STRIP "${OEMT_VERSION}" OEMT_VERSION)
+if(NOT OEMT_VERSION MATCHES "^[0-9]+\\.[0-9]+\\.[0-9]+$")
+    message(FATAL_ERROR "oemt/VERSION must be x.y.z, got '${OEMT_VERSION}'")
+endif()
+add_compile_definitions(OEMT_VERSION="${OEMT_VERSION}")
+
+# OEmt.club self-update source: a public GitHub repo "owner/name" whose releases carry
+# oemt-club-v<version>-windows-x86_64.zip. Empty disables self-update, so a build never installs
+# upstream Millennium releases over itself. Downloads are only accepted from this repo's releases.
+set(OEMT_RELEASES_REPO "" CACHE STRING "GitHub owner/repo publishing OEmt.club releases; empty disables self-update")
+if(OEMT_RELEASES_REPO AND NOT OEMT_RELEASES_REPO MATCHES "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
+    message(FATAL_ERROR "OEMT_RELEASES_REPO must look like owner/repo, got '${OEMT_RELEASES_REPO}'")
+endif()
+add_compile_definitions(OEMT_RELEASES_REPO="${OEMT_RELEASES_REPO}")
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")

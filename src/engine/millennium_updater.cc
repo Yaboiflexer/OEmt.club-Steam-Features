@@ -94,8 +94,8 @@ void millennium_updater::check_for_updates(const std::string& channel_override)
     return;
 #endif
 
-    if (GITHUB_API_URL[0] == '\0') {
-        logger.log("Skipping update check: no OEmt.club release source configured (OEMT_RELEASES_API_URL).");
+    if (!updates_configured()) {
+        logger.log("Skipping update check: no OEmt.club release source configured (OEMT_RELEASES_REPO).");
         return;
     }
 
@@ -111,7 +111,7 @@ void millennium_updater::check_for_updates(const std::string& channel_override)
     std::string response;
 
     try {
-        response = Http::Get(GITHUB_API_URL, false);
+        response = Http::Get(releases_api_url().c_str(), false);
         if (response.empty()) {
             LOG_ERROR("Empty response from GitHub API, skipping update check.");
             return;
@@ -154,7 +154,7 @@ void millennium_updater::check_for_updates(const std::string& channel_override)
 
         std::string current_version;
         try {
-            current_version = parse_version(MILLENNIUM_VERSION);
+            current_version = parse_version(OEMT_VERSION); /* OEmt.club version, not the core's MILLENNIUM_VERSION */
         } catch (...) {
             LOG_ERROR("Failed to parse current Millennium version.");
             return;
@@ -210,7 +210,7 @@ std::optional<nlohmann::json> millennium_updater::find_asset(const nlohmann::jso
     return std::nullopt;
 #endif
 
-    std::string target_name = "millennium-" + release_info.value("tag_name", "") + "-" + platform_suffix;
+    std::string target_name = "oemt-club-" + release_info.value("tag_name", "") + "-" + platform_suffix;
     for (auto& asset : release_info["assets"]) {
         if (asset.value("name", "") == target_name) return asset;
     }
@@ -419,7 +419,7 @@ void millennium_updater::update_impl(const std::string& downloadUrl, const size_
         }
 #endif
         logger.log("Update completed successfully.");
-        this->dispatch_progress_to_frontend("Successfully updated Millennium!", 100.0f, true);
+        this->dispatch_progress_to_frontend("Successfully updated OEmt.club!", 100.0f, true);
         update_state(true);
 
     } catch (const std::exception& e) {
@@ -445,8 +445,13 @@ bool millennium_updater::is_pending_restart()
 
 void millennium_updater::update(const std::string& downloadUrl, const size_t downloadSize, bool background)
 {
-    if (GITHUB_API_URL[0] == '\0') {
-        logger.warn("Refusing self-update: no OEmt.club release source configured (OEMT_RELEASES_API_URL).");
+    if (!updates_configured()) {
+        logger.warn("Refusing self-update: no OEmt.club release source configured (OEMT_RELEASES_REPO).");
+        return;
+    }
+    /** The URL comes from the frontend: only install assets published in the configured repo's releases. */
+    if (downloadUrl.rfind(download_prefix(), 0) != 0 || downloadUrl.find("..") != std::string::npos) {
+        logger.warn("Refusing self-update: download URL is not an OEmt.club release asset.");
         return;
     }
 

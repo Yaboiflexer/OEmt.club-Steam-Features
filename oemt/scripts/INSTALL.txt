@@ -5,7 +5,7 @@ OEmt.club - install (test build)
 2. If Millennium is installed, remove it first: delete wsock32.dll and the "millennium"
    folder from your Steam folder (back them up if you want to go back). OEmt.club and
    Millennium cannot be installed at the same time; both use wsock32.dll.
-3. Copy everything from this zip into your Steam folder
+3. Copy everything from the zip into your Steam folder
    (usually C:\Program Files (x86)\Steam), so that you get:
        Steam\wsock32.dll
        Steam\oemt\lib\oemt.dll, oemt.hhx64.dll
