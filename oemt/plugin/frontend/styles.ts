@@ -154,9 +154,6 @@ export const CSS = `
 
 
 /* Integrations and now playing */
-.oemt-int-grid { grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); align-items: start; }
-.oemt-integration { display: flex; flex-direction: column; }
-.oemt-int-title { margin: 0; font-size: 15px; font-weight: 700; }
 .oemt-caps { margin-top: var(--oemt-s3); }
 .oemt-caps summary { cursor: pointer; }
 .oemt-nowplaying { padding: var(--oemt-s3) var(--oemt-s4); }
@@ -164,7 +161,6 @@ export const CSS = `
 .oemt-np-text { display: flex; flex-direction: column; min-width: 0; }
 .oemt-np-title, .oemt-np-artist { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .oemt-np-artist { font-size: 12px; }
-.oemt-icon-btn { width: 32px; height: 28px; padding: 0; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; }
 .oemt-small-btn { padding: 4px 10px; font-size: 12px; }
 
 /* Media page */
@@ -182,4 +178,35 @@ export const CSS = `
 .oemt-media-title { flex: 1; max-width: 420px; font-weight: 700; }
 .oemt-media-frame { width: 100%; border: 0; border-radius: var(--oemt-radius); background: var(--oemt-raised); flex: none; }
 @media (max-width: 900px) { .oemt-media { grid-template-columns: 1fr; } }
+
+/* Integrations page */
+.oemt-int-page { display: flex; flex-direction: column; gap: var(--oemt-s3); max-width: 920px; }
+.oemt-int { padding: var(--oemt-s4); display: flex; flex-direction: column; gap: var(--oemt-s3); border: 1px solid transparent; transition: border-color var(--oemt-speed); }
+.oemt-int.oemt-int-on { border-color: var(--oemt-line); }
+.oemt-int-head { display: flex; align-items: center; gap: var(--oemt-s3); }
+.oemt-int-badge { width: 36px; height: 36px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; color: #fff; font-weight: 800; font-size: 16px; flex: none; }
+.oemt-int-name { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.oemt-int-name h3 { margin: 0; font-size: 15px; font-weight: 700; }
+.oemt-int-body { display: flex; flex-direction: column; gap: 2px; padding-left: 48px; }
+.oemt-set { display: flex; align-items: center; gap: var(--oemt-s3); padding: 8px 0; border-top: 1px solid var(--oemt-line); }
+.oemt-set:first-child { border-top: 0; }
+.oemt-set-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.oemt-set-ctl { flex: none; }
+.oemt-compact-input { padding: 5px 8px; font-size: 12px; width: 240px; }
+.oemt-int-np { display: flex; align-items: center; gap: var(--oemt-s3); padding: 10px 12px; margin-bottom: 6px; border-radius: var(--oemt-radius); background: var(--oemt-raised); }
+.oemt-int-np .oemt-np-text { flex: 1; }
+.oemt-int-list { display: flex; flex-direction: column; gap: 2px; padding-top: 8px; border-top: 1px solid var(--oemt-line); }
+.oemt-int-file { appearance: none; border: 0; background: none; color: inherit; font: inherit; text-align: left; display: flex; justify-content: space-between; gap: var(--oemt-s3); padding: 5px 6px; border-radius: var(--oemt-radius); cursor: pointer; }
+.oemt-int-file:hover { background: var(--oemt-hover); }
+.oemt-int .oemt-caps { margin: 0; padding-left: 48px; }
+.oemt-link { appearance: none; border: 0; background: none; padding: 0; color: var(--oemt-accent-2); font: inherit; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+
+/* Media controls (SVG) */
+.oemt-media-ctl { display: inline-flex; align-items: center; gap: 6px; flex: none; }
+.oemt-ctl-btn { appearance: none; border: 0; background: none; color: var(--oemt-muted); width: 30px; height: 30px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: color var(--oemt-speed), background-color var(--oemt-speed), transform var(--oemt-speed); }
+.oemt-ctl-btn svg { width: 16px; height: 16px; fill: currentColor; }
+.oemt-ctl-btn:hover { color: var(--oemt-text); }
+.oemt-ctl-btn.oemt-ctl-main { background: var(--oemt-text); color: var(--oemt-raised); width: 34px; height: 34px; }
+.oemt-ctl-btn.oemt-ctl-main:hover { transform: scale(1.06); }
+.oemt-ctl-btn:focus-visible { outline: 2px solid var(--oemt-accent); outline-offset: 2px; }
 `;

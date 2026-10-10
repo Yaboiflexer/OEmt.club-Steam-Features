@@ -5,6 +5,7 @@ import { MediaAction } from '../api';
 import * as live from '../liveStore';
 import { openWeb, WEB_PAGES } from '../web';
 import { Pill } from '../ui';
+import { MediaControls } from './MediaControls';
 
 const SOURCE_LABEL = { spotify: 'Spotify', soundcloud: 'SoundCloud' } as const;
 
@@ -51,11 +52,7 @@ export const NowPlayingCard: FC<{ visible: boolean; compact?: boolean; onOpenInt
 						)}
 					</div>
 					<div className="oemt-spacer" />
-					<div className="oemt-row" role="group" aria-label="Media controls" style={{ gap: 4 }}>
-						<button className="oemt-btn oemt-icon-btn" onClick={() => press('previous')} aria-label="Previous track" title="Previous">⏮</button>
-						<button className="oemt-btn oemt-icon-btn oemt-primary" onClick={() => press('play_pause')} aria-label="Play or pause" title="Play / pause">⏯</button>
-						<button className="oemt-btn oemt-icon-btn" onClick={() => press('next')} aria-label="Next track" title="Next">⏭</button>
-					</div>
+					<MediaControls onPress={press} />
 				</div>
 			)}
 			{error && <div className="oemt-small" style={{ color: 'var(--oemt-fail)', marginTop: 6 }}>{error}</div>}
