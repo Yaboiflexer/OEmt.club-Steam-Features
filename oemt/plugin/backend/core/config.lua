@@ -55,6 +55,9 @@ function M:load()
                     self.issues[#self.issues + 1] = { key = key, problem = "repair failed: " .. tostring(perr), action = "default used in memory" }
                 end
             end
+        elseif schema.removed[key] then
+            -- A setting from an earlier version: delete it quietly instead of warning on every start.
+            if self.store and self.store.delete then pcall(self.store.delete, key) end
         else
             self.issues[#self.issues + 1] = { key = tostring(key), problem = "unknown setting", action = "ignored" }
         end

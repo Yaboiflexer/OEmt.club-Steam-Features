@@ -120,3 +120,19 @@ T.test("start page accepts OEmt tabs and Steam pages, each with a readable label
     for _, d in ipairs(schema.describe()) do if d.key == "ui.default_tab" then described = d end end
     T.eq(described.labels.steam_library, "Steam Library", "labels reach the UI")
 end)
+
+T.test("settings from earlier versions are deleted quietly, unknown ones still reported", function()
+    local Config = require("core.config")
+    local data = { ["integrations.tcno.enabled"] = true, ["accounts.ttl_avatar_min"] = 60, ["made.up.key"] = 1 }
+    local deleted = {}
+    local store = {
+        get_all = function() return data end,
+        set = function() return true end,
+        delete = function(k) deleted[#deleted + 1] = k; data[k] = nil; return true end,
+    }
+    local cfg = Config.new(store, nil)
+    local issues = cfg:load()
+    table.sort(deleted)
+    T.eq(table.concat(deleted, ","), "accounts.ttl_avatar_min,integrations.tcno.enabled")
+    T.eq(#issues, 1); T.eq(issues[1].key, "made.up.key")
+end)

@@ -60,6 +60,15 @@ M.migrations = {
                          accounts = "sessions", home = "sessions", library = "sessions" },
 }
 
+-- Settings that earlier versions had and this one dropped; they are deleted from the store on load.
+M.removed = {
+    ["integrations.tcno.enabled"] = true,       -- TcNo integration removed
+    ["accounts.ttl_avatar_min"] = true,         -- account cache moved to the separate Accounts build
+    ["accounts.ttl_profile_min"] = true,
+    ["accounts.ttl_status_min"] = true,
+    ["accounts.ttl_cooldown_min"] = true,
+}
+
 function M.migrate(key, value)
     local m = M.migrations[key]
     if m and type(value) == "string" and m[value] then return m[value] end
