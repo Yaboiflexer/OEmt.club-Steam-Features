@@ -25,4 +25,7 @@ declare const backend: {
 	OEmtFrontendLog(level: string, event: string, message: string): FfiResult;
 	OEmtIntegrationTick(): FfiResult;
 	OEmtDiscordTest(): FfiResult;
+	OEmtPlayerStatus(): FfiResult;
+	OEmtPlayerCover(key: string): FfiResult;
+	OEmtPlayerCommand(action: string, value: number): FfiResult;
 };

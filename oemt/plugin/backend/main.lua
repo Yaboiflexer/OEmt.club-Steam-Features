@@ -39,6 +39,8 @@ local function production_services()
         exec = function(cmd) return utils.exec(cmd) end,
         -- Windows calls through LuaJIT's FFI: Discord's local pipe.
         win32 = require("core.win32"),
+        -- Native helper for the sidebar music player: <Steam>/oemt/bin/oemt-media.exe
+        media_helper = util.join(util.norm_path(millennium.steam_path()), "oemt", "bin", "oemt-media.exe"),
         read_file = util.read_file,
         exists = function(p) return fs.exists(p) end,
         mkdirs = function(p) return fs.create_directories(p) end,

@@ -12,6 +12,7 @@ local library_mod  = require("modules.steam_library")
 local Sessions     = require("modules.sessions")
 local integrations = require("modules.integrations")
 local IntegrationsLive = require("modules.integrations_live")
+local MediaSession = require("modules.media_session")
 local diagnostics  = require("modules.diagnostics")
 local IpLog        = require("modules.ip_log")
 
@@ -151,6 +152,9 @@ function M.new(services)
     app.events:on("game.started", live_tick)
     app.events:on("game.stopped", live_tick)
 
+    -- Music player in Steam's sidebar: Windows' media session + system volume via oemt-media.exe
+    app.player = MediaSession.new({ helper = services.media_helper, exec = services.exec, exists = services.exists, clock = services.clock })
+
     app.registry:start_all()
     app.metrics.startup_ms = (os.clock() - t0) * 1000
     app.log:info({ module = "startup", event = "boot", outcome = "ok", duration_ms = app.metrics.startup_ms,
@@ -218,6 +222,23 @@ function M.attach_api(app)
 
     wrap("integrations", function(refresh) return app.integrations.list(app.ctx, refresh == true) end)
     wrap("integration_tick", function() return app.live:tick() end)
+    local function player_on() return app.config:get("ui.sidebar_player") ~= false end
+    wrap("player_status", function()
+        if not player_on() then return { enabled = false } end
+        local cur, err = app.player:current()
+        return { enabled = true, available = app.player:available(), current = cur, volume = app.player.volume, error = err }
+    end)
+    wrap("player_cover", function(key)
+        local res, err = app.player:cover(key ~= nil and tostring(key) or nil)
+        if not res then error(err) end
+        return res
+    end)
+    wrap("player_command", function(action, value)
+        if not player_on() then error("The sidebar player is turned off in Settings") end
+        local ok, err = app.player:command(tostring(action or ""), value)
+        if ok == nil then error(err) end
+        return { ok = ok, volume = app.player.volume }
+    end)
     wrap("discord_test", function()
         local res, err = app.live:test()
         if not res then error(err) end

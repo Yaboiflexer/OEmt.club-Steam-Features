@@ -1,21 +1,47 @@
-OEmt.club - install (test build)
-================================
+OEmt.club - install guide
+=========================
 
-1. Fully close Steam (right-click the tray icon -> Exit).
-2. If Millennium is installed, remove it first: delete wsock32.dll and the "millennium"
-   folder from your Steam folder (back them up if you want to go back). OEmt.club and
-   Millennium cannot be installed at the same time; both use wsock32.dll.
-3. Copy everything from the zip into your Steam folder
-   (usually C:\Program Files (x86)\Steam), so that you get:
+What you get
+- OEmt.club inside Steam's main window: Sessions (your game history and your own public IP log),
+  Settings and Diagnostics, right in Steam's top bar.
+- The OEmt.club theme (dark blue-gray, indigo accents, Lucida Console) and a "Steam (original)" theme.
+- A music player in Steam's sidebar for whatever is playing (Spotify, a browser tab, ...): cover art,
+  back / play-pause / next, progress and system volume.
+- Discord Rich Presence: your game and play time on your Discord profile, with a
+  "Join OEmt.club" button (discord.gg/OEmt).
+
+Requirements
+- Windows 10 or 11 (64-bit) with the regular Steam client (stable branch).
+
+Install
+1. Fully close Steam: right-click the Steam icon in the taskbar tray, then Exit.
+2. If Millennium is installed, remove it first: delete wsock32.dll and the "millennium" folder
+   from your Steam folder (back them up if you want to go back). OEmt.club and Millennium can't be
+   installed at the same time; both use wsock32.dll.
+3. Extract the zip into your Steam folder (usually C:\Program Files (x86)\Steam). Allow it to
+   replace files if asked. You should now have:
        Steam\wsock32.dll
-       Steam\oemt\lib\oemt.dll, oemt.hhx64.dll
-       Steam\oemt\bin\oemt.luavm64.exe, oemt.crashhandler64.exe
-       Steam\oemt\plugins\club.oemt.core.star
-4. Start Steam. The OEmt.club plugin is enabled automatically on first run.
-   Open it from the Quick Access menu ("Open OEmt.club").
+       Steam\oemt\lib\       oemt.dll, oemt.hhx64.dll
+       Steam\oemt\bin\       oemt.luavm64.exe, oemt.crashhandler64.exe, oemt-media.exe
+       Steam\oemt\plugins\   club.oemt.core.star
+       Steam\oemt\themes\    OEmt, SteamOriginal
+4. Start Steam. OEmt.club turns itself on the first time.
+5. Pick the theme: Steam menu > OEmt.club > Themes > OEmt.club > Use. Steam reloads its UI.
 
-Your data lives in Steam\oemt\ (config, logs, plugins, themes).
-Millennium plugins (.star) and themes still work: put them in Steam\oemt\plugins and
-Steam\oemt\themes.
+Set up Discord Rich Presence (optional)
+1. Go to https://discord.com/developers/applications > New Application, name it "OEmt.club".
+2. Copy its Application ID.
+3. In Steam: OEmt.club > Settings > Discord Rich Presence: turn it on and paste the ID.
+   Press Test: your Discord profile shows "Rich Presence is working" for 15 seconds.
+   Discord must be running on the same PC. No login or token is used.
 
-Uninstall: close Steam, delete Steam\wsock32.dll and the Steam\oemt folder.
+Good to know
+- Everything runs on your PC. OEmt.club never asks for or stores passwords.
+- The IP log is off until you turn it on (Sessions > My public IP) and only logs your own IP.
+- The sidebar player can be turned off in Settings ("Music player in Steam's sidebar").
+- If something looks wrong, open OEmt.club > Diagnostics and press "Copy diagnostics"; personal
+  details are removed from the copy.
+- Your data lives in Steam\oemt\ (config, logs, plugins, themes).
+
+Uninstall
+Close Steam, then delete Steam\wsock32.dll and the Steam\oemt folder.

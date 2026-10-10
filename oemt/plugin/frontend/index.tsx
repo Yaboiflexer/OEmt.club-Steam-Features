@@ -6,6 +6,7 @@ import { definePlugin, Navigation, Router, routerHook, useParams } from 'millenn
 import { api } from './api';
 import { startLifetimeTracking } from './games';
 import { startIpLogging } from './iplog';
+import { makeSidebarPlayer } from './sidebarPlayer';
 import * as live from './liveStore';
 import { getCurrentTab, getIntegration, openPath, requestTab, setIntegration, setPathNavigator, subscribeNav } from './nav';
 import { DEFAULT_TAB, OEMT_ROUTE, OEMT_ROUTE_PATTERN, resolveRoute, routeToPath, startTarget } from './routes';
@@ -109,6 +110,7 @@ const QuickPanel: FC = () => {
 };
 
 const FALLBACK_NAV = 'oemt-nav-fallback';
+const SIDEBAR_PLAYER = 'oemt-sidebar-player';
 let initialized = false;
 
 export default definePlugin(() => {
@@ -153,6 +155,7 @@ export default definePlugin(() => {
 	setIntegration({ routes: [OEMT_ROUTE_PATTERN] });
 	try {
 		routerHook.addGlobalComponent(FALLBACK_NAV, TopbarFallback);
+		routerHook.addGlobalComponent(SIDEBAR_PLAYER, makeSidebarPlayer(() => steamwin.mainWindow()?.document, (msg) => api.log('info', 'sidebar_player', msg)));
 	} catch (err) {
 		api.log('warn', 'fallback_nav_failed', String((err as Error)?.message ?? err));
 	}
@@ -192,6 +195,7 @@ export default definePlugin(() => {
 			routerHook.removeRoute(OEMT_ROUTE_PATTERN);
 			try {
 				routerHook.removeGlobalComponent(FALLBACK_NAV);
+				routerHook.removeGlobalComponent(SIDEBAR_PLAYER);
 			} catch {
 				/* not registered */
 			}

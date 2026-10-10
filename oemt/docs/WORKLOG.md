@@ -2,6 +2,11 @@
 
 Running notes of what was built, so work can resume after a break. Newest first.
 
+## 2026-10-10: Release candidate (branch `oemt/phase2`)
+- Only Discord Rich Presence kept (settings in Settings). Media page, Spotify, SoundCloud and Insights are on `oemt/media-wip`.
+- Sidebar music player in Steam's user panel. `oemt-media.exe` (C++/WinRT) reads Windows' media session and system volume. The games list and download bar spacing follows the panel's real height (`--oemt-panel-h`).
+- Package `dist/oemt-club-v0.1.0-windows-x86_64.zip`: core, plugin, media helper, OEmt.club and Steam (original) themes, INSTALL.txt (community guide).
+
 ## 2026-10-10: Phase 2, integrations (branch `oemt/phase2`)
 
 **Committed**

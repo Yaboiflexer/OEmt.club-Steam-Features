@@ -31,6 +31,7 @@ M.fields = {
 
     ["ui.accent"]            = { type = "color", default = "#577999", label = "Accent color when the OEmt.club theme is off (theme colors are set in the theme's settings)", group = "appearance" },
     ["ui.reduced_motion"]    = { type = "bool", default = false, label = "Reduce motion", group = "appearance" },
+    ["ui.sidebar_player"]    = { type = "bool", default = true, label = "Music player in Steam's sidebar (whatever is playing: Spotify, browser, …)", group = "appearance" },
     ["ui.topbar_items"]      = { type = "string", max_len = 300, default = "sessions,settings",
                                  label = "Items in Steam's top bar (comma-separated; empty = none)", group = "topbar" },
     ["ui.open_on_start"]     = { type = "bool", default = true, label = "Open OEmt.club when Steam starts", group = "appearance" },

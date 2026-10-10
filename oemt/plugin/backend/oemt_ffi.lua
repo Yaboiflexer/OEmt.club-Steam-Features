@@ -107,3 +107,18 @@ function OEmtIntegrationTick() return call("integration_tick") end
 ---@return table
 function OEmtDiscordTest() return call("discord_test") end
 
+
+---@ffi
+---@return table
+function OEmtPlayerStatus() return call("player_status") end
+
+---@ffi
+---@param key string
+---@return table
+function OEmtPlayerCover(key) return call("player_cover", key) end
+
+---@ffi
+---@param action string
+---@param value number
+---@return table
+function OEmtPlayerCommand(action, value) return call("player_command", action, value) end

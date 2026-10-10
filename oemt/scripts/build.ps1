@@ -37,6 +37,10 @@ Write-Host "Self-update source: $(if ($ReleasesRepo) { $ReleasesRepo } else { 'n
 Run 'cmake configure' { cmake --preset=windows-release -DMILLENNIUM_RUN_TESTS_ON_BUILD=OFF -DMILLENNIUM_BUILD_TO_STEAM_PATH=OFF "-DOEMT_RELEASES_REPO=$ReleasesRepo" }
 Run 'cmake build' { cmake --build build }
 
+Step 'Media helper (oemt-media.exe)'
+New-Item -ItemType Directory -Force build\media-helper | Out-Null
+Run 'cl oemt-media' { cl /nologo /EHsc /std:c++20 /O2 /MT /DUNICODE /D_UNICODE /DWIN32_LEAN_AND_MEAN /DNOMINMAX oemt\media-helper\main.cpp /Fo:build\media-helper\ /Fe:build\media-helper\oemt-media.exe /link windowsapp.lib ole32.lib /SUBSYSTEM:CONSOLE }
+
 # --- plugin -----------------------------------------------------------------------------------
 Step 'starlight (plugin packer)'
 $starlight = Join-Path $root 'starlight\target\release\starlight.exe'
@@ -71,9 +75,17 @@ New-Item -ItemType Directory -Force "$out\oemt\lib", "$out\oemt\bin", "$out\oemt
 # The zip mirrors the Steam folder exactly: the updater extracts it straight over <Steam>.
 Copy-Item build\oemt.bootstrap64.dll "$out\wsock32.dll"   # Steam loads this by name; it loads oemt\lib\oemt.dll
 Copy-Item build\oemt.dll, build\oemt.hhx64.dll "$out\oemt\lib\"
-Copy-Item build\oemt.luavm64.exe, build\oemt.crashhandler64.exe "$out\oemt\bin\"
+Copy-Item build\oemt.luavm64.exe, build\oemt.crashhandler64.exe, build\media-helper\oemt-media.exe "$out\oemt\bin\"
 Copy-Item build\oemt-plugin\club.oemt.core.star "$out\oemt\plugins\"
 Copy-Item LICENSE.md, NOTICE.md, oemt\scripts\INSTALL.txt "$out\oemt\"
+# Themes: OEmt.club (SpaceTheme base + OEmt overlay; needs oemt\theme\upstream\SpaceTheme) and Steam (original).
+$spaceTheme = Join-Path $root 'oemt\theme\upstream\SpaceTheme'
+if (Test-Path (Join-Path $spaceTheme 'skin.json')) {
+    Run 'theme' { powershell -ExecutionPolicy Bypass -File oemt\theme\build-theme.ps1 -SpaceTheme $spaceTheme -Out "$out\oemt\themes\OEmt" }
+} else {
+    Write-Warning "SpaceTheme checkout not found at $spaceTheme; the package will not include the OEmt.club theme."
+}
+Copy-Item oemt\theme\steam-original "$out\oemt\themes\SteamOriginal" -Recurse
 Compress-Archive -Path "$out\*" -DestinationPath "$out.zip" -Force
 
 Write-Host "`nBuilt $out.zip" -ForegroundColor Green

@@ -28,6 +28,17 @@ export interface Integration {
 	capabilities: { id: string; label: string; status: CapabilityStatus; note?: string }[];
 }
 
+export type PlayerCommand = 'play_pause' | 'next' | 'previous' | 'shuffle' | 'repeat_mode' | 'seek' | 'volume' | 'mute';
+export interface PlayerState {
+	source: 'spotify' | 'browser' | 'app'; app: string; title: string; artist: string; album: string;
+	state: 'playing' | 'paused' | 'stopped' | 'changing' | 'closed'; position: number; duration: number;
+	shuffle?: boolean; repeat?: 'none' | 'track' | 'list'; has_thumb: boolean; thumb_key: string;
+	can: { play_pause: boolean; next: boolean; previous: boolean; seek: boolean; shuffle: boolean; repeat: boolean };
+}
+export interface Volume { level: number; muted: boolean }
+/** Sidebar music player: Windows' media session + system volume (backend/modules/media_session.lua). */
+export interface PlayerStatus { enabled: boolean; available?: boolean; current?: PlayerState; volume?: Volume; error?: string }
+
 /** Live state from backend/modules/integrations_live.lua. */
 export interface LiveStatus {
 	available: boolean;
@@ -110,6 +121,9 @@ export const api = {
 	clearSessions: () => call<boolean>('clear_sessions', backend.OEmtClearSessions()),
 	integrationTick: () => call<LiveStatus>('integration_tick', backend.OEmtIntegrationTick()),
 	discordTest: () => call<LiveStatus>('discord_test', backend.OEmtDiscordTest()),
+	playerStatus: () => call<PlayerStatus>('player_status', backend.OEmtPlayerStatus()),
+	playerCover: (key = '') => call<{ key?: string; data_url?: string }>('player_cover', backend.OEmtPlayerCover(key)),
+	playerCommand: (action: PlayerCommand, value = 0) => call<{ ok: boolean; volume?: Volume }>('player_command', backend.OEmtPlayerCommand(action, value)),
 	async integrations(refresh = false): Promise<Integration[]> {
 		const list = arr<Integration>(await call<unknown>('integrations', backend.OEmtGetIntegrations(refresh)));
 		return list.map((i) => ({ ...i, capabilities: arr(i.capabilities) }));
