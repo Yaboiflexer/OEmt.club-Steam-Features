@@ -4,6 +4,7 @@ local logger     = require("logger")
 local millennium = require("millennium")
 local fs         = require("fs")
 local http       = require("http")
+local utils      = require("utils")
 local util       = require("core.util")
 local App        = require("app")
 
@@ -28,6 +29,8 @@ local function production_services()
         mirror_logger = logger,
         getenv = os.getenv,
         http_get = function(url, opts) return http.get(url, opts) end,
+        -- utils.exec runs `cmd /c <command>` hidden (CREATE_NO_WINDOW) and waits; callers detach with "start".
+        exec = function(cmd) return utils.exec(cmd) end,
         read_file = util.read_file,
         exists = function(p) return fs.exists(p) end,
         mkdirs = function(p) return fs.create_directories(p) end,

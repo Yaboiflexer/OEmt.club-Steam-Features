@@ -8,6 +8,7 @@ import { FC } from 'react';
 import { HomeView } from './views/Home';
 import { LibraryView } from './views/Library';
 import { SessionsView } from './views/Sessions';
+import { AccountsView } from './views/Accounts';
 import { IntegrationsView } from './views/Integrations';
 import { PerformanceView } from './views/Performance';
 import { NetworkView } from './views/Network';
@@ -24,6 +25,7 @@ export const TABS = [
 	{ id: 'home', label: 'Home', Component: HomeView },
 	{ id: 'library', label: 'Library', Component: LibraryView },
 	{ id: 'sessions', label: 'Sessions', Component: SessionsView },
+	{ id: 'accounts', label: 'Accounts', Component: AccountsView },
 	{ id: 'integrations', label: 'Integrations', Component: IntegrationsView },
 	{ id: 'performance', label: 'Performance', Component: PerformanceView },
 	{ id: 'network', label: 'Network', Component: NetworkView },

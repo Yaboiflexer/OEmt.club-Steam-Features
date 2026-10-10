@@ -52,9 +52,9 @@ M.DEFINITIONS = {
         },
         detect_note = "Custom install folders are not detected yet; Phase 2 adds a manual path setting.",
         capabilities = {
-            { id = "list_accounts", label = "List saved accounts (--list-accounts=Steam --json)", status = "planned" },
-            { id = "switch_steam", label = "Switch Steam account (+s:<SteamID64>)", status = "planned" },
-            { id = "switch_and_launch", label = "Switch then launch a game (--run-appid)", status = "planned" },
+            { id = "list_accounts", label = "List the accounts Steam remembers (read from Steam's loginusers.vdf)", status = "available" },
+            { id = "switch_steam", label = "Switch Steam account (TcNo +s:<SteamID64>[:status]) from the Accounts tab", status = "available" },
+            { id = "switch_and_launch", label = "Switch then launch a game (OEmt launches it after Steam restarts)", status = "available" },
         },
     },
     {

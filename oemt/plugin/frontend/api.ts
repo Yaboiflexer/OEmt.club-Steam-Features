@@ -78,6 +78,12 @@ export interface IpLogData {
 	last_error?: string; save_error?: string; load_error?: string;
 }
 
+export interface SteamAccount {
+	steamid: string; persona_name: string; account_masked: string; most_recent: boolean;
+	remembered: boolean; offline_mode: boolean; last_login: number; label?: string;
+}
+export interface AccountsData { accounts: SteamAccount[]; error?: string; tcno_found: boolean; enabled: boolean; states: string[] }
+
 export interface SelfTest { passed: number; total: number; ran_at: string; results: { name: string; ok: boolean; detail: string; duration_ms: number }[] }
 
 /** Millennium's Lua->JSON bridge can emit an empty Lua table as {} where an array is expected. */
@@ -161,6 +167,15 @@ export const api = {
 	checkIp: (reason: 'startup' | 'auto' | 'manual' | 'session_start', appid = '') =>
 		call<{ ip?: string; changed?: boolean; skipped?: boolean; session?: IpSession }>('ip_check', backend.OEmtCheckIp(reason, appid)),
 	clearIpLog: () => call<boolean>('ip_clear', backend.OEmtClearIpLog()),
+	async accounts(): Promise<AccountsData> {
+		const d = await call<AccountsData>('accounts', backend.OEmtGetAccounts());
+		return { ...d, accounts: arr(d.accounts), states: arr(d.states) };
+	},
+	setAccountLabel: (steamid: string, label: string) => call<boolean>('account_label', backend.OEmtSetAccountLabel(steamid, label)),
+	switchAccount: (steamid: string, state: string, launchAppid: string) =>
+		call<{ started: boolean }>('account_switch', backend.OEmtSwitchAccount(steamid, state, launchAppid)),
+	takePendingLaunch: () =>
+		call<{ appid?: string; expired?: boolean; wrong_account?: boolean; none?: boolean }>('account_pending_launch', backend.OEmtTakePendingLaunch()),
 	exportDiagnostics: (frontendInfo: object) => call<string>('export_diagnostics', backend.OEmtExportDiagnostics(JSON.stringify(frontendInfo))),
 	/** Fire-and-forget; logging must never throw into the UI. */
 	log(level: LogLevel, event: string, message: string) {

@@ -3,7 +3,7 @@
 import { FC } from 'react';
 import { definePlugin, Navigation, routerHook } from 'millennium';
 import { api } from './api';
-import { startLifetimeTracking } from './games';
+import { launchGame, startLifetimeTracking } from './games';
 import { startIpLogging } from './iplog';
 import { Logo, Shell } from './shell';
 import { CSS } from './styles';
@@ -51,6 +51,17 @@ export default definePlugin(() => {
 
 	routerHook.addRoute(OEMT_ROUTE, OEmtPage, { exact: true });
 	api.log('info', 'frontend_ready', `route ${OEMT_ROUTE} registered`);
+
+	// Account Center "switch then launch": after TcNo restarted Steam on the chosen account, play the game.
+	setTimeout(() => {
+		api.takePendingLaunch().then(
+			(p) => {
+				if (p.appid) launchGame(p.appid).catch(() => undefined);
+				else if (p.wrong_account) api.log('warn', 'pending_launch_skipped', 'signed-in account differs from the one switched to');
+			},
+			() => undefined,
+		);
+	}, OPEN_ON_START_DELAY_MS + 1000);
 
 	// OEmt.club is the main screen: open it once Steam's own start page has rendered (ui.open_on_start).
 	api.overview().then(

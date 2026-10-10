@@ -24,10 +24,18 @@ T.test("detects installed apps from standard locations only", function()
     T.falsy(by.discord.enabled, "integrations are opt-in")
 end)
 
-T.test("no integration claims an available capability in Phase 1", function()
+-- Only capabilities that are actually implemented may say "available" (TcNo: Account Center, Phase 2).
+local IMPLEMENTED = { ["tcno.list_accounts"] = true, ["tcno.switch_steam"] = true, ["tcno.switch_and_launch"] = true }
+
+T.test("only implemented capabilities claim to be available", function()
     for _, def in ipairs(integ.DEFINITIONS) do
         for _, cap in ipairs(def.capabilities) do
-            T.truthy(cap.status == "planned" or cap.status == "unsupported", def.id .. "." .. cap.id)
+            local id = def.id .. "." .. cap.id
+            if IMPLEMENTED[id] then
+                T.eq(cap.status, "available", id)
+            else
+                T.truthy(cap.status == "planned" or cap.status == "unsupported", id)
+            end
         end
     end
 end)

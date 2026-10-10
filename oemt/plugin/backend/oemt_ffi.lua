@@ -110,6 +110,27 @@ function OEmtCheckIp(reason, appid) return call("ip_check", reason, appid) end
 function OEmtClearIpLog() return call("ip_clear") end
 
 ---@ffi
+---@return table
+function OEmtGetAccounts() return call("accounts") end
+
+---@ffi
+---@param steamid string
+---@param label string
+---@return table
+function OEmtSetAccountLabel(steamid, label) return call("account_label", steamid, label) end
+
+---@ffi
+---@param steamid string
+---@param state string
+---@param launch_appid string
+---@return table
+function OEmtSwitchAccount(steamid, state, launch_appid) return call("account_switch", steamid, state, launch_appid) end
+
+---@ffi
+---@return table
+function OEmtTakePendingLaunch() return call("account_pending_launch") end
+
+---@ffi
 ---@param level string
 ---@param event string
 ---@param message string

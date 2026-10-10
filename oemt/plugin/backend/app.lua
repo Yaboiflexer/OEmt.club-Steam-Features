@@ -13,6 +13,7 @@ local Sessions     = require("modules.sessions")
 local integrations = require("modules.integrations")
 local diagnostics  = require("modules.diagnostics")
 local IpLog        = require("modules.ip_log")
+local Accounts     = require("modules.accounts")
 
 local M = {}
 
@@ -134,6 +135,31 @@ function M.new(services)
             if app.ip_log.save_error then return { status = "degraded", detail = "Cannot save IP log: " .. app.ip_log.save_error } end
             if app.ip_log.last_error then return { status = "degraded", detail = "Last lookup failed: " .. app.ip_log.last_error } end
             return { status = "ok", detail = #app.ip_log.changes .. " IP change(s) recorded" }
+        end,
+    })
+
+    -- Account Center (TcNo, opt-in via integrations.tcno.enabled)
+    local function json_store(name)
+        if not (data_dir and data_ok) then return nil end
+        local p = util.join(data_dir, name)
+        return {
+            load = function() return services.read_file(p) end,
+            save = function(text) return util.write_file_atomic(p, text) end,
+            clear = function() os.remove(p) end,
+        }
+    end
+    app.accounts = Accounts.new({
+        steam_path = services.steam_path, read_file = services.read_file, exists = services.exists,
+        getenv = services.getenv, exec = services.exec, clock = services.clock, log = app.log,
+        store_labels = json_store("account_labels.json"), store_pending = json_store("pending_launch.json"),
+    })
+    app.registry:register({
+        id = "accounts", name = "Account Center", version = M.VERSION, deps = { "config" },
+        init = function() app.accounts:load() end,
+        health = function()
+            local list, err = app.accounts:list()
+            if err then return { status = "degraded", detail = err } end
+            return { status = "ok", detail = #list .. " remembered account(s); TcNo " .. (app.accounts:tcno_path() and "found" or "not found") }
         end,
     })
 
@@ -319,6 +345,33 @@ function M.attach_api(app)
         local ok, err = app.ip_log:clear()
         if not ok then error(err) end
         return true
+    end)
+
+    -- Account Center
+    local function tcno_enabled() return app.config:get("integrations.tcno.enabled") == true end
+
+    wrap("accounts", function()
+        local list, err = app.accounts:list()
+        return { accounts = list, error = err, tcno_found = app.accounts:tcno_path() ~= nil, enabled = tcno_enabled(),
+                 states = util.array({ "online", "away", "invisible", "busy", "offline" }) }
+    end)
+
+    wrap("account_label", function(steamid, label)
+        local ok, err = app.accounts:set_label(steamid, label)
+        if not ok then error(err) end
+        return true
+    end)
+
+    wrap("account_switch", function(steamid, state, launch_appid)
+        if not tcno_enabled() then error("Turn on the TcNo integration first (Integrations tab)") end
+        if #app.sessions:active_list() > 0 then error("A game is running. Close it before switching accounts; switching restarts Steam.") end
+        local res, err = app.accounts:switch(steamid, { state = state, launch_appid = launch_appid })
+        if not res then error(err) end
+        return res
+    end)
+
+    wrap("account_pending_launch", function()
+        return app.accounts:take_pending_launch() or { none = true }
     end)
 
     wrap("frontend_log", function(level, event, message)

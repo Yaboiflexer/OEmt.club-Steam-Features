@@ -25,5 +25,9 @@ declare const backend: {
 	OEmtGetIpLog(limit: number): FfiResult;
 	OEmtCheckIp(reason: string, appid: string): FfiResult;
 	OEmtClearIpLog(): FfiResult;
+	OEmtGetAccounts(): FfiResult;
+	OEmtSetAccountLabel(steamid: string, label: string): FfiResult;
+	OEmtSwitchAccount(steamid: string, state: string, launch_appid: string): FfiResult;
+	OEmtTakePendingLaunch(): FfiResult;
 	OEmtFrontendLog(level: string, event: string, message: string): FfiResult;
 };
