@@ -95,6 +95,21 @@ function OEmtRunSelfTest() return call("self_test") end
 function OEmtExportDiagnostics(frontend_json) return call("export_diagnostics", frontend_json) end
 
 ---@ffi
+---@param limit number
+---@return table
+function OEmtGetIpLog(limit) return call("ip_log", limit) end
+
+---@ffi
+---@param reason string
+---@param appid string
+---@return table
+function OEmtCheckIp(reason, appid) return call("ip_check", reason, appid) end
+
+---@ffi
+---@return table
+function OEmtClearIpLog() return call("ip_clear") end
+
+---@ffi
 ---@param level string
 ---@param event string
 ---@param message string

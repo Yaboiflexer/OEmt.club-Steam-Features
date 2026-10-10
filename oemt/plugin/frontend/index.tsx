@@ -4,6 +4,7 @@ import { FC } from 'react';
 import { definePlugin, Navigation, routerHook } from 'millennium';
 import { api } from './api';
 import { startLifetimeTracking } from './games';
+import { startIpLogging } from './iplog';
 import { Logo, Shell } from './shell';
 import { CSS } from './styles';
 import { ErrorBoundary, Pill, useAsync } from './ui';
@@ -45,6 +46,9 @@ export default definePlugin(() => {
 		api.log('error', 'lifetime_tracking_failed', String((err as Error)?.message ?? err));
 	}
 
+	// Opt-in own-IP log: startup check, timed checks, and a check when a game starts (no-op when off).
+	const stopIpLogging = startIpLogging();
+
 	routerHook.addRoute(OEMT_ROUTE, OEmtPage, { exact: true });
 	api.log('info', 'frontend_ready', `route ${OEMT_ROUTE} registered`);
 
@@ -65,6 +69,7 @@ export default definePlugin(() => {
 		content: <QuickPanel />,
 		onDismount() {
 			stopTracking();
+			stopIpLogging();
 			routerHook.removeRoute(OEMT_ROUTE);
 		},
 	};

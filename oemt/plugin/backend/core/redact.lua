@@ -60,6 +60,13 @@ function M.string(s)
     end)
     -- 17-digit SteamID64 values
     s = s:gsub("7656119%d%d%d%d%d%d%d%d%d%d", "[steamid]")
+    -- IPv4 addresses (the IP log must never leak into logs or diagnostics exports)
+    s = s:gsub("%f[%d]%d%d?%d?%.%d%d?%d?%.%d%d?%d?%.%d%d?%d?%f[^%d]", "[ip]")
+    -- IPv6 addresses: 3+ colons or a "::" (clock times like 05:42:42 have two colons and no "::")
+    s = s:gsub("%f[%x:][%x]*:[%x]*:[%x:]*%x%f[^%x:]", function(m)
+        local colons = select(2, m:gsub(":", ""))
+        return (colons >= 3 or m:find("::", 1, true)) and "[ip]" or m
+    end)
     if not home_patterns then build_home_patterns() end
     for _, hp in ipairs(home_patterns) do
         s = plain_replace(s, hp.raw, hp.label)

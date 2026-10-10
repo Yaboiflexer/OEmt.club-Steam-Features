@@ -21,13 +21,18 @@ M.fields = {
     ["sessions.max_history"] = { type = "int", min = 10, max = 2000, default = 500,
                                  label = "Session history size", group = "sessions" },
 
+    ["network.ip_logging"]     = { type = "bool", default = false,
+                                   label = "Log my public IP (looked up via api.ipify.org)", group = "network" },
+    ["network.ip_check_minutes"] = { type = "int", min = 5, max = 1440, default = 30,
+                                     label = "Check my IP every N minutes", group = "network" },
+
     ["privacy.share_activity"] = { type = "bool", default = false,
                                    label = "Share activity with integrations (opt-in)", group = "privacy" },
 
     ["ui.accent"]            = { type = "color", default = "#577999", label = "Accent color", group = "appearance" },
     ["ui.reduced_motion"]    = { type = "bool", default = false, label = "Reduce motion", group = "appearance" },
     ["ui.open_on_start"]     = { type = "bool", default = true, label = "Open OEmt.club when Steam starts", group = "appearance" },
-    ["ui.default_tab"]       = { type = "enum", values = { "home", "library", "sessions", "integrations", "performance", "settings", "diagnostics" },
+    ["ui.default_tab"]       = { type = "enum", values = { "home", "library", "sessions", "integrations", "performance", "network", "settings", "diagnostics" },
                                  default = "home", label = "Open on tab", group = "appearance" },
 
     -- Integrations are opt-in. Phase 1 performs detection only; enabling records consent for later phases.

@@ -205,6 +205,24 @@ T.test("ffi globals return the boot-error envelope when the app failed to start"
     OEMT_APP, OEMT_BOOT_ERROR = saved_app, saved_err
 end)
 
+T.test("IP log: skipped while off, recorded and persisted when on", function()
+    local get = function() return { status = 200, body = '{"ip":"203.0.113.7"}' } end
+    local app, services = boot({ http_get = get })
+    T.eq(ok_data(app.api.ip_check("manual"), "ip_check off").skipped, true)
+    T.eq(ok_data(app.api.ip_log(10), "ip_log").enabled, false)
+
+    ok_data(app.api.set_setting("network.ip_logging", true), "enable")
+    T.eq(ok_data(app.api.ip_check("auto"), "ip_check").ip, "203.0.113.7")
+    local s = ok_data(app.api.ip_check("session_start", "730"), "session ip").session
+    T.eq(s.name, "Counter-Strike 2"); T.eq(s.ip, "203.0.113.7")
+    local l = ok_data(app.api.ip_log(10), "ip_log")
+    T.eq(l.current.ip, "203.0.113.7"); T.eq(#l.sessions, 1)
+    T.truthy(util.read_file(util.join(services.data_dir, "ip_log.json")), "ip_log.json saved")
+    T.not_contains(ok_data(app.api.export_diagnostics(""), "export"), "203.0.113.7")
+    ok_data(app.api.ip_clear(), "clear")
+    T.eq(#ok_data(app.api.ip_log(10), "ip_log").changes, 0)
+end)
+
 T.test("boot survives an unwritable data folder", function()
     local app = boot({ mkdirs = function() return nil end, dir_writable = function() return false end })
     local o = ok_data(app.api.overview(), "overview")

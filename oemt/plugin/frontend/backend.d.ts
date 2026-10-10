@@ -22,5 +22,8 @@ declare const backend: {
 	OEmtGetLogs(limit: number, min_level: string): FfiResult;
 	OEmtRunSelfTest(): FfiResult;
 	OEmtExportDiagnostics(frontend_json: string): FfiResult;
+	OEmtGetIpLog(limit: number): FfiResult;
+	OEmtCheckIp(reason: string, appid: string): FfiResult;
+	OEmtClearIpLog(): FfiResult;
 	OEmtFrontendLog(level: string, event: string, message: string): FfiResult;
 };

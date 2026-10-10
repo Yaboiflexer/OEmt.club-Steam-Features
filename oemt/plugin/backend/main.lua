@@ -3,6 +3,7 @@
 local logger     = require("logger")
 local millennium = require("millennium")
 local fs         = require("fs")
+local http       = require("http")
 local util       = require("core.util")
 local App        = require("app")
 
@@ -26,6 +27,7 @@ local function production_services()
         data_dir = resolve_data_dir(),
         mirror_logger = logger,
         getenv = os.getenv,
+        http_get = function(url, opts) return http.get(url, opts) end,
         read_file = util.read_file,
         exists = function(p) return fs.exists(p) end,
         mkdirs = function(p) return fs.create_directories(p) end,

@@ -12,6 +12,7 @@ local library_mod  = require("modules.steam_library")
 local Sessions     = require("modules.sessions")
 local integrations = require("modules.integrations")
 local diagnostics  = require("modules.diagnostics")
+local IpLog        = require("modules.ip_log")
 
 local M = {}
 
@@ -108,6 +109,31 @@ function M.new(services)
             if app.sessions.save_error then return { status = "degraded", detail = "Cannot save history: " .. app.sessions.save_error } end
             if app.sessions.load_error then return { status = "degraded", detail = app.sessions.load_error } end
             return { status = "ok", detail = #app.sessions.history .. " sessions recorded" }
+        end,
+    })
+
+    -- Own public IP log (opt-in)
+    app.ip_log = IpLog.new({
+        http_get = services.http_get, clock = services.clock, log = app.log,
+        store = (data_dir and data_ok) and {
+            load = function() return services.read_file(util.join(data_dir, "ip_log.json")) end,
+            save = function(text) return util.write_file_atomic(util.join(data_dir, "ip_log.json"), text) end,
+            backup = function()
+                local p = util.join(data_dir, "ip_log.json")
+                os.remove(p .. ".corrupt")
+                os.rename(p, p .. ".corrupt")
+            end,
+        } or nil,
+    })
+    app.registry:register({
+        -- Always loaded so turning logging on later never overwrites a saved log; the
+        -- network.ip_logging setting only gates lookups (see the ip_check API).
+        id = "ip_log", name = "IP Log", version = M.VERSION, deps = { "config" },
+        init = function() app.ip_log:load() end,
+        health = function()
+            if app.ip_log.save_error then return { status = "degraded", detail = "Cannot save IP log: " .. app.ip_log.save_error } end
+            if app.ip_log.last_error then return { status = "degraded", detail = "Last lookup failed: " .. app.ip_log.last_error } end
+            return { status = "ok", detail = #app.ip_log.changes .. " IP change(s) recorded" }
         end,
     })
 
@@ -263,6 +289,36 @@ function M.attach_api(app)
         local fe = nil
         if type(frontend_json) == "string" and frontend_json ~= "" then fe = json.decode(frontend_json) end
         return diagnostics.export_bundle(app.ctx, fe)
+    end)
+
+    -- Own public IP log. Disabled -> calls report it instead of looking anything up.
+    local function ip_enabled() return app.config:get("network.ip_logging") == true end
+
+    wrap("ip_log", function(limit)
+        local data = app.ip_log:list(limit)
+        data.enabled = ip_enabled()
+        data.check_minutes = app.config:get("network.ip_check_minutes")
+        return data
+    end)
+
+    wrap("ip_check", function(reason, appid)
+        if not ip_enabled() then return { skipped = true, reason = "IP logging is off" } end
+        if reason == "session_start" then
+            local a = appid and app.library.find(appid)
+            local entry, err = app.ip_log:session_start(appid, a and a.name or nil)
+            if not entry then error(err) end
+            return { session = entry }
+        end
+        local allowed = { startup = true, auto = true, manual = true }
+        local res, err = app.ip_log:check(allowed[reason] and reason or "manual")
+        if not res then error(err) end
+        return res
+    end)
+
+    wrap("ip_clear", function()
+        local ok, err = app.ip_log:clear()
+        if not ok then error(err) end
+        return true
     end)
 
     wrap("frontend_log", function(level, event, message)

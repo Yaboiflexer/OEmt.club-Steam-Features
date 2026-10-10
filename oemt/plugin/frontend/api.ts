@@ -71,6 +71,13 @@ export interface LogEntry {
 	duration_ms?: number; msg?: string; error?: string; data?: unknown;
 }
 
+export interface IpChange { ip: string; first_seen: number; last_seen: number; checks: number; reason: string }
+export interface IpSession { at: number; appid: string; name?: string; ip: string; fresh: boolean }
+export interface IpLogData {
+	enabled: boolean; check_minutes: number; current?: IpChange; changes: IpChange[]; sessions: IpSession[];
+	last_error?: string; save_error?: string; load_error?: string;
+}
+
 export interface SelfTest { passed: number; total: number; ran_at: string; results: { name: string; ok: boolean; detail: string; duration_ms: number }[] }
 
 /** Millennium's Lua->JSON bridge can emit an empty Lua table as {} where an array is expected. */
@@ -147,6 +154,13 @@ export const api = {
 		const r = await call<SelfTest>('self_test', backend.OEmtRunSelfTest());
 		return { ...r, results: arr(r.results) };
 	},
+	async ipLog(limit = 200): Promise<IpLogData> {
+		const d = await call<IpLogData>('ip_log', backend.OEmtGetIpLog(limit));
+		return { ...d, changes: arr(d.changes), sessions: arr(d.sessions) };
+	},
+	checkIp: (reason: 'startup' | 'auto' | 'manual' | 'session_start', appid = '') =>
+		call<{ ip?: string; changed?: boolean; skipped?: boolean; session?: IpSession }>('ip_check', backend.OEmtCheckIp(reason, appid)),
+	clearIpLog: () => call<boolean>('ip_clear', backend.OEmtClearIpLog()),
 	exportDiagnostics: (frontendInfo: object) => call<string>('export_diagnostics', backend.OEmtExportDiagnostics(JSON.stringify(frontendInfo))),
 	/** Fire-and-forget; logging must never throw into the UI. */
 	log(level: LogLevel, event: string, message: string) {

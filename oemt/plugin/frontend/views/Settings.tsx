@@ -1,5 +1,6 @@
 import { FC, useEffect, useState } from 'react';
 import { api, SettingField } from '../api';
+import { scheduleIpChecks } from '../iplog';
 import { useShell } from '../shell';
 import { ConfirmButton, Empty, ErrorText, Panel, useAsync } from '../ui';
 
@@ -7,6 +8,7 @@ const GROUPS: { id: string; label: string }[] = [
 	{ id: 'appearance', label: 'Appearance' },
 	{ id: 'library', label: 'Library' },
 	{ id: 'sessions', label: 'Sessions' },
+	{ id: 'network', label: 'Network' },
 	{ id: 'privacy', label: 'Privacy' },
 	{ id: 'integrations', label: 'Integrations' },
 	{ id: 'diagnostics', label: 'Logging' },
@@ -63,6 +65,7 @@ export const SettingsView: FC = () => {
 			await api.setSetting(key, value);
 			setErrors(({ [key]: _, ...rest }) => rest);
 			if (APPEARANCE_KEYS.has(key)) shell.refreshAppearance();
+			if (key.startsWith('network.')) scheduleIpChecks();
 		} catch (err) {
 			setErrors((e) => ({ ...e, [key]: String((err as Error)?.message ?? err) }));
 		}

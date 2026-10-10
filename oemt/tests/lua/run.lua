@@ -63,7 +63,7 @@ end
 
 local files = {
     "test_jsonlite", "test_redact", "test_vdf", "test_schema_config", "test_log", "test_events_registry",
-    "test_capabilities", "test_steam_library", "test_sessions", "test_integrations", "test_app",
+    "test_capabilities", "test_steam_library", "test_sessions", "test_integrations", "test_ip_log", "test_app",
 }
 
 local filter = arg and arg[1]

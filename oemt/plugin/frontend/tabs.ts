@@ -10,6 +10,7 @@ import { LibraryView } from './views/Library';
 import { SessionsView } from './views/Sessions';
 import { IntegrationsView } from './views/Integrations';
 import { PerformanceView } from './views/Performance';
+import { NetworkView } from './views/Network';
 import { SettingsView } from './views/Settings';
 import { DiagnosticsView } from './views/Diagnostics';
 
@@ -25,6 +26,7 @@ export const TABS = [
 	{ id: 'sessions', label: 'Sessions', Component: SessionsView },
 	{ id: 'integrations', label: 'Integrations', Component: IntegrationsView },
 	{ id: 'performance', label: 'Performance', Component: PerformanceView },
+	{ id: 'network', label: 'Network', Component: NetworkView },
 	{ id: 'settings', label: 'Settings', Component: SettingsView },
 	{ id: 'diagnostics', label: 'Diagnostics', Component: DiagnosticsView },
 ] as const satisfies readonly TabDef[];
