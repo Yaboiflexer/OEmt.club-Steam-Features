@@ -3,12 +3,12 @@ project(millennium_crashhandler CXX)
 
 include(${MILLENNIUM_BASE}/scripts/cmake/millennium_version.cmake)
 
-set(VERSION_COMPANY      "Steam Homebrew")
-set(VERSION_COPYRIGHT    "Steam Homebrew 2025")
+set(VERSION_COMPANY      "OEmt.club")
+set(VERSION_COPYRIGHT    "OEmt.club; portions (c) Project Millennium (MIT)")
 set(VERSION_TRADEMARK1   "All Rights Reserved")
-set(VERSION_DESCRIPTION  "Crash handler watchdog for Millennium")
+set(VERSION_DESCRIPTION  "Crash handler watchdog for OEmt.club")
 set(VERSION_FILENAME     "${MILLENNIUM_CRASH_HANDLER_NAME}.exe")
-set(VERSION_PRODUCT      "Millennium Crash Handler")
+set(VERSION_PRODUCT      "OEmt.club Crash Handler")
 set(VERSION_FILETYPE     "VFT_APP")
 
 set(VERSION_FILE "${CMAKE_BINARY_DIR}/${MILLENNIUM_CRASH_HANDLER_NAME}.rc")

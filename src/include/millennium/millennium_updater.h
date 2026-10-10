@@ -53,7 +53,11 @@ class millennium_updater
     void set_ipc_main(std::shared_ptr<ipc_main> ipc_main);
 
   private:
-    static constexpr const char* GITHUB_API_URL = "https://api.github.com/repos/SteamClientHomebrew/Millennium/releases";
+#ifndef OEMT_RELEASES_API_URL
+#define OEMT_RELEASES_API_URL ""
+#endif
+    /** OEmt.club: set by the OEMT_RELEASES_API_URL CMake cache variable; empty disables self-update. */
+    static constexpr const char* GITHUB_API_URL = OEMT_RELEASES_API_URL;
 
     std::string parse_version(const std::string& version);
     void update_impl(const std::string& downloadUrl, const size_t downloadSize);

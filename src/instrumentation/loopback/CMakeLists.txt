@@ -7,12 +7,12 @@ FetchContent_Declare(Corrosion URL "${MILLENNIUM_BASE}/thirdparty/corrosion-v0.6
 FetchContent_MakeAvailable(Corrosion)
 
 string(TIMESTAMP CURRENT_YEAR "%Y")
-set(VERSION_COMPANY      "Steam Homebrew")
-set(VERSION_COPYRIGHT    "Steam Homebrew ${TIMESTAMP}")
+set(VERSION_COMPANY      "OEmt.club")
+set(VERSION_COPYRIGHT    "OEmt.club; portions (c) Project Millennium (MIT)")
 set(VERSION_TRADEMARK1   "All Rights Reserved")
-set(VERSION_DESCRIPTION  "A hook utility library for Millennium")
+set(VERSION_DESCRIPTION  "A hook utility library for OEmt.club")
 set(VERSION_FILENAME     "${MILLENNIUM_HOOK_HELPER_OUTPUT_NAME}")
-set(VERSION_PRODUCT      "Millennium Webhelper Hook")
+set(VERSION_PRODUCT      "OEmt.club Webhelper Hook")
 set(VERSION_FILETYPE     "VFT_DLL")
 
 set(VERSION_FILE "${CMAKE_BINARY_DIR}/${MILLENNIUM_HOOK_HELPER_OUTPUT_NAME}.rc")

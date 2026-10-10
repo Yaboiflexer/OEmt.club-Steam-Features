@@ -38,6 +38,11 @@ if(DEFINED MILLENNIUM_CHILD_HOOK_OUTPUT_NAME)
     add_compile_definitions(__MILLENNIUM_CHILD_HOOK_OUTPUT_NAME__="${MILLENNIUM_CHILD_HOOK_OUTPUT_NAME}")
 endif()
 
+# OEmt.club self-update source (a GitHub "releases" API URL). Empty disables self-update,
+# so an OEmt.club build never installs upstream Millennium releases over itself.
+set(OEMT_RELEASES_API_URL "" CACHE STRING "GitHub releases API URL for OEmt.club self-updates; empty disables self-update")
+add_compile_definitions(OEMT_RELEASES_API_URL="${OEMT_RELEASES_API_URL}")
+
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
 

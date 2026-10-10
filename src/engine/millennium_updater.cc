@@ -94,6 +94,11 @@ void millennium_updater::check_for_updates(const std::string& channel_override)
     return;
 #endif
 
+    if (GITHUB_API_URL[0] == '\0') {
+        logger.log("Skipping update check: no OEmt.club release source configured (OEMT_RELEASES_API_URL).");
+        return;
+    }
+
     const bool checkForUpdates = CONFIG.get({ "general", "checkForMillenniumUpdates" }, true).get<bool>();
     std::string channel = channel_override.empty() ? CONFIG.get({ "general", "millenniumUpdateChannel" }, "stable").get<std::string>() : channel_override;
 
@@ -440,6 +445,11 @@ bool millennium_updater::is_pending_restart()
 
 void millennium_updater::update(const std::string& downloadUrl, const size_t downloadSize, bool background)
 {
+    if (GITHUB_API_URL[0] == '\0') {
+        logger.warn("Refusing self-update: no OEmt.club release source configured (OEMT_RELEASES_API_URL).");
+        return;
+    }
+
     {
         std::lock_guard<std::mutex> lock(m_state_mutex);
 

@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 3.21)
 
-set(VERSION_COMPANY      "Steam Homebrew")
-set(VERSION_COPYRIGHT    "Steam Homebrew 2025")
+set(VERSION_COMPANY      "OEmt.club")
+set(VERSION_COPYRIGHT    "OEmt.club; portions (c) Project Millennium (MIT)")
 set(VERSION_TRADEMARK1   "All Rights Reserved")
 set(VERSION_DESCRIPTION  "A plugin loader for the modern Steam Client")
 set(VERSION_FILENAME     "${MILLENNIUM_OUTPUT_NAME}")
-set(VERSION_PRODUCT      "Millennium")
+set(VERSION_PRODUCT      "OEmt.club")
 set(VERSION_FILETYPE     "VFT_DLL")
 
 set(CMAKE_CXX_STANDARD 23 CACHE STRING "C++ standard to use" FORCE)
