@@ -213,6 +213,14 @@ export function MillenniumSettings() {
 function RenderSettingsModal(_: any, retObj: any) {
 	const items = [
 		{
+			/** OEmt.club: the OEmt.club main screen, registered by the bundled plugin at /oemt */
+			name: 'OEmt.club Home',
+			onClick: () => {
+				Navigation.Navigate('/oemt');
+			},
+			visible: true,
+		},
+		{
 			name: locale.strMillennium,
 			onClick: () => {
 				Navigation.Navigate('/millennium/settings');

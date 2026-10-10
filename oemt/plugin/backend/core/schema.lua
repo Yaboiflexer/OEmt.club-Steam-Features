@@ -26,6 +26,7 @@ M.fields = {
 
     ["ui.accent"]            = { type = "color", default = "#577999", label = "Accent color", group = "appearance" },
     ["ui.reduced_motion"]    = { type = "bool", default = false, label = "Reduce motion", group = "appearance" },
+    ["ui.open_on_start"]     = { type = "bool", default = true, label = "Open OEmt.club when Steam starts", group = "appearance" },
     ["ui.default_tab"]       = { type = "enum", values = { "home", "library", "sessions", "integrations", "performance", "settings", "diagnostics" },
                                  default = "home", label = "Open on tab", group = "appearance" },
 

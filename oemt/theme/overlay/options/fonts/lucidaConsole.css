@@ -1,0 +1,4 @@
+/* OEmt.club default font. Lucida Console ships with Windows, so nothing is downloaded. */
+* {
+    font-family: "Lucida Console", Consolas, monospace !important;
+}

@@ -9,6 +9,8 @@ import { CSS } from './styles';
 import { ErrorBoundary, Pill, useAsync } from './ui';
 
 export const OEMT_ROUTE = '/oemt';
+/** Steam navigates to its own start page during startup; navigating earlier would be overridden. */
+const OPEN_ON_START_DELAY_MS = 1500;
 
 const OEmtPage: FC = () => (
 	<div style={{ position: 'relative', width: '100%', height: '100%', minHeight: 600 }}>
@@ -45,6 +47,18 @@ export default definePlugin(() => {
 
 	routerHook.addRoute(OEMT_ROUTE, OEmtPage, { exact: true });
 	api.log('info', 'frontend_ready', `route ${OEMT_ROUTE} registered`);
+
+	// OEmt.club is the main screen: open it once Steam's own start page has rendered (ui.open_on_start).
+	api.overview().then(
+		(o) => {
+			if (!o.settings.open_on_start) return;
+			setTimeout(() => {
+				Navigation.Navigate(OEMT_ROUTE);
+				api.log('info', 'opened_on_start', OEMT_ROUTE);
+			}, OPEN_ON_START_DELAY_MS);
+		},
+		() => undefined,
+	);
 
 	return {
 		icon: <span style={{ display: 'inline-flex', width: 20, height: 20 }}><Logo /></span>,

@@ -1,0 +1,21 @@
+/* OEmt.club palette for the OEmt.club Steam theme (layout by SpaceTheme, MIT).
+   Same variables SpaceTheme uses, so every SpaceTheme option keeps working. Values are "r, g, b". */
+:root {
+    --st-accent-1: 87, 121, 153;   /* OEmt accent #577999 */
+    --st-accent-2: 112, 148, 182;
+    --st-color-1: 22, 24, 28;      /* #16181c canvas */
+    --st-color-2: 30, 33, 39;      /* #1e2127 panels */
+    --st-color-3: 26, 28, 33;
+    --st-color-4: 28, 31, 36;
+    --st-color-5: 38, 42, 50;      /* #262a32 raised */
+    --st-color-6: 44, 48, 56;
+    --st-background: 16, 17, 20;
+    --st-red: 224, 100, 100;
+    --st-red-hover: 232, 122, 122;
+    --st-green: 95, 191, 127;
+    --st-green-hover: 115, 204, 145;
+    --st-blue: 75, 137, 239;
+    --st-blue-hover: 100, 154, 242;
+    --st-yellow: 224, 176, 79;
+    --st-yellow-hover: 232, 190, 104;
+}

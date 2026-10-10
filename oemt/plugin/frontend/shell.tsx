@@ -37,6 +37,14 @@ export const Logo: FC = () => (
 
 const HEALTH_LABEL = { pass: 'Healthy', warn: 'Warnings', fail: 'Problems' } as const;
 
+/** Steam's own areas, reachable from the OEmt tab strip. steam:// URLs are Steam's stable public entry points. */
+const STEAM_LINKS = [
+	{ label: 'Store', url: 'steam://store' },
+	{ label: 'Community', url: 'steam://url/CommunityHome/' },
+	{ label: 'Steam Library', url: 'steam://nav/games' },
+	{ label: 'Downloads', url: 'steam://nav/downloads' },
+] as const;
+
 export const Shell: FC = () => {
 	const [overview, setOverview] = useState<Overview>();
 	const [bootError, setBootError] = useState<string>();
@@ -92,6 +100,13 @@ export const Shell: FC = () => {
 							<button key={t.id} role="tab" aria-selected={active === t.id}
 								className={`oemt-tab${active === t.id ? ' oemt-active' : ''}`} onClick={() => setActive(t.id)}>
 								{t.label}
+							</button>
+						))}
+						<span className="oemt-tab-divider" aria-hidden="true" />
+						{STEAM_LINKS.map((l) => (
+							<button key={l.url} className="oemt-tab oemt-tab-steam" title={`Open Steam's ${l.label}`}
+								onClick={() => SteamClient.URL.ExecuteSteamURL(l.url)}>
+								{l.label}
 							</button>
 						))}
 					</nav>

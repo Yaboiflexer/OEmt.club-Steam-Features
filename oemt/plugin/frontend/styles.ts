@@ -55,6 +55,8 @@ export const CSS = `
 }
 .oemt-tab:hover { color: var(--oemt-text); }
 .oemt-tab.oemt-active { color: var(--oemt-text); border-bottom-color: var(--oemt-accent); }
+.oemt-tab-divider { width: 1px; align-self: center; height: 18px; background: var(--oemt-line); margin: 0 6px; flex: none; }
+.oemt-tab-steam { font-weight: 500; opacity: 0.8; }
 .oemt-body { flex: 1; min-height: 0; position: relative; }
 .oemt-tabpage { position: absolute; inset: 0; overflow-y: auto; }
 .oemt-tabpage[hidden] { display: none; }

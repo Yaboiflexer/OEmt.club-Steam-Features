@@ -180,7 +180,7 @@ function M.attach_api(app)
             recent = recent_games(app, 8),
             integrations_detected = detected,
             settings = { accent = app.config:get("ui.accent"), reduced_motion = app.config:get("ui.reduced_motion"),
-                         default_tab = app.config:get("ui.default_tab") },
+                         default_tab = app.config:get("ui.default_tab"), open_on_start = app.config:get("ui.open_on_start") },
         }
     end)
 

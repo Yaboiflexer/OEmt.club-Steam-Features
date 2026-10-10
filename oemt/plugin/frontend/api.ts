@@ -21,7 +21,7 @@ export interface Overview {
 	version: string; millennium_version: string; health: CheckStatus; checks: Check[];
 	library?: { apps: number; libraries: number; warnings: number; scanned_at: number };
 	active_sessions: Session[]; recent: RecentGame[]; integrations_detected: number;
-	settings: { accent: string; reduced_motion: boolean; default_tab: string };
+	settings: { accent: string; reduced_motion: boolean; default_tab: string; open_on_start: boolean };
 }
 
 export interface LibraryApp {
