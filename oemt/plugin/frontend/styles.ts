@@ -73,6 +73,12 @@ export const CSS = `
 .oemt-root ::-webkit-scrollbar-corner { background: transparent; }
 .oemt-root ::-webkit-scrollbar-button { display: none; }
 
+.oemt-pagebar { display: flex; align-items: center; gap: 10px; flex: none; min-width: 0; }
+.oemt-crumbs { display: flex; align-items: center; gap: 6px; margin: 0; font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.oemt-crumb-sep { color: var(--oemt-muted); }
+.oemt-pillbtn { appearance: none; background: none; border: 0; padding: 0; cursor: pointer; }
+.oemt-more { overflow-x: auto; scrollbar-width: none; }
+.oemt-tab:focus-visible, .oemt-btn:focus-visible { outline: 2px solid var(--oemt-accent); outline-offset: 2px; }
 .oemt-tab-divider { width: 1px; align-self: center; height: 18px; background: var(--oemt-line); margin: 0 6px; flex: none; }
 .oemt-tab-steam { opacity: 0.8; }
 .oemt-body { flex: 1; min-height: 0; position: relative; }

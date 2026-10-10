@@ -1,6 +1,7 @@
 import { FC, useState } from 'react';
 import { api, LogLevel, SelfTest } from '../api';
 import { useShell } from '../shell';
+import { PerformanceView } from './Performance';
 import { Empty, ErrorText, Panel, Pill, Tone, useAsync } from '../ui';
 
 const MODULE_TONE: Record<string, Tone> = { ok: 'pass', degraded: 'warn', disabled: 'neutral', error: 'fail' };
@@ -105,6 +106,9 @@ export const DiagnosticsView: FC = () => {
 					{d.config_issues.map((i, n) => <div key={n} className="oemt-muted">{i.key}: {i.problem}{i.action ? ` (${i.action})` : ''}</div>)}
 				</Panel>
 			)}
+
+			<h3 className="oemt-label" style={{ marginTop: 6 }}>Performance</h3>
+			<PerformanceView />
 
 			<Panel label="Logs" right={
 				<div className="oemt-row">

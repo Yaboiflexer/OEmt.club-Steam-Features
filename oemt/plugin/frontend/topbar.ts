@@ -5,6 +5,7 @@
 // header again, so navigation is never lost. Items reuse Steam's item classes so they look native.
 import { Navigation } from 'millennium';
 import { getCurrentTab, requestTab, setTopbarActive, subscribeNav } from './nav';
+import type { TopbarItem } from './routes';
 
 const NAV_ROW = '._3Z3ohQ8-1NKnCZkbS6fvy ._2D64jIEK7wpUR_NlObDW76';
 const NAV_ITEM = '._7AlhCx3XGzBeIrQaCneUD';
@@ -13,28 +14,9 @@ const NAV_LABEL = '._19axKcqYRuaJ8vdYKYmtTQ';
 const CONTAINER_ID = 'oemt-topbar-items';
 const OEMT_ROUTE = '/oemt';
 
-export interface TopbarItem { id: string; label: string; kind: 'tab' | 'route'; route?: string }
-
-/** Everything that may appear in the top bar. Tabs open inside the OEmt page; routes are other screens. */
-export const TOPBAR_CHOICES: TopbarItem[] = [
-	{ id: 'home', label: 'Home', kind: 'tab' },
-	{ id: 'library', label: 'Library', kind: 'tab' },
-	{ id: 'sessions', label: 'Sessions', kind: 'tab' },
-	{ id: 'accounts', label: 'Accounts', kind: 'tab' },
-	{ id: 'integrations', label: 'Integrations', kind: 'tab' },
-	{ id: 'performance', label: 'Performance', kind: 'tab' },
-	{ id: 'network', label: 'Network', kind: 'tab' },
-	{ id: 'settings', label: 'Settings', kind: 'tab' },
-	{ id: 'diagnostics', label: 'Diagnostics', kind: 'tab' },
-	{ id: 'themes', label: 'Themes & Plugins', kind: 'route', route: '/millennium/settings' },
-];
-
-export const DEFAULT_TOPBAR = 'home,library,sessions,accounts,network,settings';
-
-export function parseTopbar(value: unknown): TopbarItem[] {
-	const ids = String(value ?? DEFAULT_TOPBAR).split(',').map((s) => s.trim()).filter(Boolean);
-	return ids.map((id) => TOPBAR_CHOICES.find((c) => c.id === id)).filter((c): c is TopbarItem => !!c);
-}
+// The item list, defaults and legacy-id mapping live in routes.ts (unit-tested).
+export { DEFAULT_TOPBAR, parseTopbar, TOPBAR_CHOICES } from './routes';
+export type { TopbarItem } from './routes';
 
 function mainDocument(): Document | undefined {
 	try {

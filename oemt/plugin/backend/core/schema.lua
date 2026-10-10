@@ -31,10 +31,10 @@ M.fields = {
 
     ["ui.accent"]            = { type = "color", default = "#577999", label = "Accent color when the OEmt.club theme is off (theme colors are set in the theme's settings)", group = "appearance" },
     ["ui.reduced_motion"]    = { type = "bool", default = false, label = "Reduce motion", group = "appearance" },
-    ["ui.topbar_items"]      = { type = "string", max_len = 300, default = "home,library,sessions,accounts,network,settings",
+    ["ui.topbar_items"]      = { type = "string", max_len = 300, default = "home,accounts,netsessions,settings,diagnostics",
                                  label = "Items in Steam's top bar (comma-separated; empty = none)", group = "topbar" },
     ["ui.open_on_start"]     = { type = "bool", default = true, label = "Open OEmt.club when Steam starts", group = "appearance" },
-    ["ui.default_tab"]       = { type = "enum", values = { "home", "library", "sessions", "accounts", "integrations", "performance", "network", "settings", "diagnostics" },
+    ["ui.default_tab"]       = { type = "enum", values = { "home", "accounts", "netsessions", "settings", "diagnostics", "library", "integrations", "sessions", "network", "performance" },
                                  default = "home", label = "Open on tab", group = "appearance" },
 
     -- Integrations are opt-in. Phase 1 performs detection only; enabling records consent for later phases.
