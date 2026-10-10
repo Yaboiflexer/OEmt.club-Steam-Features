@@ -1,6 +1,7 @@
 import { createContext, FC, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { api, Overview } from './api';
 import { CSS } from './styles';
+import { getTopbarIds, isTopbarActive, setCurrentTab, subscribeNav, takeRequestedTab } from './nav';
 import { ErrorBoundary, Pill } from './ui';
 import { TABS, TabId } from './tabs';
 
@@ -72,6 +73,20 @@ export const Shell: FC = () => {
 		if (active) setOpened((s) => (s.has(active) ? s : new Set(s).add(active)));
 	}, [active]);
 
+	// Steam's top bar: follow tab requests, report the visible tab, hide our header while injected.
+	const [topbar, setTopbar] = useState({ active: isTopbarActive(), ids: getTopbarIds() });
+	useEffect(() => {
+		const apply = () => {
+			const req = takeRequestedTab();
+			if (req && TABS.some((t) => t.id === req)) setActive(req as TabId);
+			setTopbar({ active: isTopbarActive(), ids: getTopbarIds() });
+		};
+		apply();
+		return subscribeNav(apply);
+	}, []);
+	useEffect(() => setCurrentTab(active), [active]);
+	useEffect(() => () => setCurrentTab(undefined), []);
+
 	const shell = useMemo<ShellApi>(
 		() => ({
 			go(tab, opts) {
@@ -93,6 +108,23 @@ export const Shell: FC = () => {
 		<ShellContext.Provider value={shell}>
 			<div className={`oemt-root${reduced ? ' oemt-reduced-motion' : ''}`} style={{ ['--oemt-accent' as string]: accent }}>
 				<style>{CSS}</style>
+				{topbar.active ? (
+					// Items live in Steam's top bar; only tabs not placed there are offered here.
+					TABS.some((t) => !topbar.ids.includes(t.id)) && (
+						<nav className="oemt-more" aria-label="More OEmt.club tabs">
+							<span className="oemt-muted oemt-small">More</span>
+							{TABS.filter((t) => !topbar.ids.includes(t.id)).map((t) => (
+								<button key={t.id} className={`oemt-tab${active === t.id ? ' oemt-active' : ''}`} onClick={() => setActive(t.id)}>{t.label}</button>
+							))}
+							<div className="oemt-spacer" />
+							{overview && (
+								<span title="Startup checks; details in Diagnostics" style={{ cursor: 'pointer' }} onClick={() => setActive('diagnostics')}>
+									<Pill tone={overview.health}>{HEALTH_LABEL[overview.health]}</Pill>
+								</span>
+							)}
+						</nav>
+					)
+				) : (
 				<header className="oemt-panel oemt-topbar">
 					<div className="oemt-brand"><Logo />OEmt.club</div>
 					<nav className="oemt-tabs" role="tablist">
@@ -117,6 +149,7 @@ export const Shell: FC = () => {
 						</span>
 					)}
 				</header>
+				)}
 
 				{bootError && (
 					<div className="oemt-panel oemt-banner oemt-fail">

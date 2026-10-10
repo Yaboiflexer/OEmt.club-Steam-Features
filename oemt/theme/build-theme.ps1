@@ -38,6 +38,10 @@ Swap '"github"\s*:\s*\{[^}]*\}\s*,' ''
 Swap '("Font"\s*:\s*\{[^{]*?"default"\s*:\s*)"[^"]*"' '$1"Lucida Console (OEmt)"'
 Swap '(?s)("Font"\s*:\s*\{.*?"values"\s*:\s*\{)' ('$1' + "`n" + '                "Lucida Console (OEmt)": { "TargetCss": { "affects": [".*"], "src": "options/fonts/lucidaConsole.css" } },')
 
+# Scrollbars option: add "Modern (OEmt)" and make it the default (SpaceTheme only offers hide / Steam default).
+Swap '("Scrollbars"\s*:\s*\{[^{]*?"default"\s*:\s*)"[^"]*"' '$1"Modern (OEmt)"'
+Swap '(?s)("Scrollbars"\s*:\s*\{.*?"values"\s*:\s*\{)' ('$1' + "`n" + '                "Modern (OEmt)": { "TargetCss": { "affects": [".*"], "src": "options/general/modernScrollbars.css" } },')
+
 $skin = $script:skin
 
 # Title-bar text logo: SpaceTheme draws "Space" + "Theme" with CSS; make it "OEmt" + ".club" in the accent colors.
@@ -51,7 +55,7 @@ foreach ($pair in @(@('content: "Space" !important;', 'content: "OEmt" !importan
 [IO.File]::WriteAllText($tbPath, $tb, $utf8)
 
 $doc = $skin | ConvertFrom-Json
-if ($doc.name -ne 'OEmt.club' -or $doc.github -or $doc.Conditions.Font.default -ne 'Lucida Console (OEmt)') { throw 'skin.json edit check failed' }
+if ($doc.name -ne 'OEmt.club' -or $doc.github -or $doc.Conditions.Font.default -ne 'Lucida Console (OEmt)' -or $doc.Conditions.Scrollbars.default -ne 'Modern (OEmt)') { throw 'skin.json edit check failed' }
 [IO.File]::WriteAllText($skinPath, $skin, $utf8)
 
 $notice = @"

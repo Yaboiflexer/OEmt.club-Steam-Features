@@ -1,6 +1,7 @@
 import { FC, useEffect, useState } from 'react';
 import { api, SettingField } from '../api';
 import { scheduleIpChecks } from '../iplog';
+import { parseTopbar, refreshTopbar, TOPBAR_CHOICES } from '../topbar';
 import { useShell } from '../shell';
 import { ConfirmButton, Empty, ErrorText, Panel, useAsync } from '../ui';
 
@@ -49,6 +50,39 @@ const Field: FC<{ field: SettingField; value: unknown; onSave: (v: unknown) => P
 				<input className="oemt-input" value={draft} onChange={(e) => setDraft(e.target.value)} onBlur={() => draft !== value && onSave(draft)} />
 			);
 	}
+};
+
+/** Which OEmt items appear in Steam's own top bar. Order follows TOPBAR_CHOICES. */
+const TopbarPanel: FC<{ value: unknown; onSaved: () => void }> = ({ value, onSaved }) => {
+	const chosen = new Set(parseTopbar(value).map((i) => i.id));
+	const [error, setError] = useState<string>();
+	async function toggle(id: string, on: boolean) {
+		const next = TOPBAR_CHOICES.filter((c) => (c.id === id ? on : chosen.has(c.id))).map((c) => c.id);
+		try {
+			await api.setSetting('ui.topbar_items', next.join(','));
+			setError(undefined);
+			refreshTopbar();
+			onSaved();
+		} catch (err) {
+			setError(String((err as Error)?.message ?? err));
+		}
+	}
+	return (
+		<Panel label="Steam top bar">
+			<div className="oemt-muted oemt-small" style={{ marginBottom: 10 }}>
+				Pick what shows next to STORE · LIBRARY · COMMUNITY. Anything you leave out stays reachable from the "More" row on the OEmt.club page.
+			</div>
+			<div className="oemt-row oemt-wrap" style={{ gap: 14 }}>
+				{TOPBAR_CHOICES.map((c) => (
+					<label key={c.id} className="oemt-row" style={{ cursor: 'pointer' }}>
+						<input type="checkbox" className="oemt-switch" checked={chosen.has(c.id)} onChange={(e) => toggle(c.id, e.target.checked)} />
+						<span>{c.label}</span>
+					</label>
+				))}
+			</div>
+			{error && <div className="oemt-small" style={{ color: 'var(--oemt-fail)', marginTop: 8 }}>{error}</div>}
+		</Panel>
+	);
 };
 
 export const SettingsView: FC = () => {
@@ -119,6 +153,8 @@ export const SettingsView: FC = () => {
 					{issues.map((i, n) => <div key={n} className="oemt-muted">{i.key}: {i.problem}{i.action ? ` (${i.action})` : ''}</div>)}
 				</div>
 			)}
+
+			<TopbarPanel value={values['ui.topbar_items']} onSaved={settings.reload} />
 
 			{GROUPS.map((g) => {
 				const fields = schema.filter((f) => f.group === g.id);

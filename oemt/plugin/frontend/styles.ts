@@ -55,6 +55,20 @@ export const CSS = `
 }
 .oemt-tab:hover { color: var(--oemt-text); }
 .oemt-tab.oemt-active { color: var(--oemt-text); border-bottom-color: var(--oemt-accent); }
+.oemt-more { display: flex; align-items: center; gap: 2px; height: 30px; padding: 0 6px; flex: none; }
+.oemt-more .oemt-tab { height: 100%; padding: 0 9px; font-size: 11px; }
+
+/* Modern scrollbars: thin, rounded, quiet until hovered */
+.oemt-root * { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.14) transparent; }
+.oemt-root ::-webkit-scrollbar { width: 8px; height: 8px; }
+.oemt-root ::-webkit-scrollbar-track { background: transparent; }
+.oemt-root ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.10); border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; transition: background var(--oemt-speed); }
+.oemt-root :hover::-webkit-scrollbar-thumb { background-color: rgba(255,255,255,0.22); }
+.oemt-root ::-webkit-scrollbar-thumb:hover { background-color: color-mix(in srgb, var(--oemt-accent) 70%, transparent); }
+.oemt-root ::-webkit-scrollbar-thumb:active { background-color: var(--oemt-accent); }
+.oemt-root ::-webkit-scrollbar-corner { background: transparent; }
+.oemt-root ::-webkit-scrollbar-button { display: none; }
+
 .oemt-tab-divider { width: 1px; align-self: center; height: 18px; background: var(--oemt-line); margin: 0 6px; flex: none; }
 .oemt-tab-steam { font-weight: 500; opacity: 0.8; }
 .oemt-body { flex: 1; min-height: 0; position: relative; }

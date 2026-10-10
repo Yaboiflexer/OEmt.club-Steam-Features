@@ -1,0 +1,15 @@
+/* OEmt.club modern scrollbars: thin, rounded, quiet until hovered, accent while dragging. */
+html * { scrollbar-width: thin; }
+html *::-webkit-scrollbar { width: 8px !important; height: 8px !important; }
+html *::-webkit-scrollbar-track { background: transparent !important; }
+html *::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.10) !important;
+    border-radius: 999px !important;
+    border: 2px solid transparent !important;
+    background-clip: padding-box !important;
+}
+html *:hover::-webkit-scrollbar-thumb { background-color: rgba(255, 255, 255, 0.22) !important; }
+html *::-webkit-scrollbar-thumb:hover { background-color: rgba(var(--st-accent-1), 0.7) !important; }
+html *::-webkit-scrollbar-thumb:active { background-color: rgb(var(--st-accent-1)) !important; }
+html *::-webkit-scrollbar-button { display: none !important; }
+html *::-webkit-scrollbar-corner { background: transparent !important; }

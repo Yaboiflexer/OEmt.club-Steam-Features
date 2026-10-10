@@ -5,6 +5,7 @@ import { definePlugin, Navigation, routerHook } from 'millennium';
 import { api } from './api';
 import { launchGame, startLifetimeTracking } from './games';
 import { startIpLogging } from './iplog';
+import { parseTopbar, startTopbar } from './topbar';
 import { Logo, Shell } from './shell';
 import { CSS } from './styles';
 import { ErrorBoundary, Pill, useAsync } from './ui';
@@ -49,6 +50,9 @@ export default definePlugin(() => {
 	// Opt-in own-IP log: startup check, timed checks, and a check when a game starts (no-op when off).
 	const stopIpLogging = startIpLogging();
 
+	// OEmt items in Steam's own top bar (ui.topbar_items).
+	const topbar = startTopbar(() => api.settings().then((s) => parseTopbar(s.values['ui.topbar_items'])));
+
 	routerHook.addRoute(OEMT_ROUTE, OEmtPage, { exact: true });
 	api.log('info', 'frontend_ready', `route ${OEMT_ROUTE} registered`);
 
@@ -81,6 +85,7 @@ export default definePlugin(() => {
 		onDismount() {
 			stopTracking();
 			stopIpLogging();
+			topbar.stop();
 			routerHook.removeRoute(OEMT_ROUTE);
 		},
 	};
