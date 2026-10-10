@@ -1,5 +1,5 @@
 # Builds the "OEmt.club" Steam theme: SpaceTheme (MIT, by SpaceEnergy / SpaceTheme) as the layout
-# base + the OEmt overlay (palette, Lucida Console default font, OEmt metadata).
+# base + the OEmt overlay (OEmt branding, named editable colors, Lucida Console default font).
 #
 #   powershell -ExecutionPolicy Bypass -File oemt\theme\build-theme.ps1 -SpaceTheme <path> -Out <dir>
 #
@@ -38,6 +38,18 @@ Swap '"github"\s*:\s*\{[^}]*\}\s*,' ''
 Swap '("Font"\s*:\s*\{[^{]*?"default"\s*:\s*)"[^"]*"' '$1"Lucida Console (OEmt)"'
 Swap '(?s)("Font"\s*:\s*\{.*?"values"\s*:\s*\{)' ('$1' + "`n" + '                "Lucida Console (OEmt)": { "TargetCss": { "affects": [".*"], "src": "options/fonts/lucidaConsole.css" } },')
 
+$skin = $script:skin
+
+# Title-bar text logo: SpaceTheme draws "Space" + "Theme" with CSS; make it "OEmt" + ".club" in the accent colors.
+$tbPath = Join-Path $Out 'src\css\steam\titlebar.css'
+$tb = [IO.File]::ReadAllText($tbPath, $utf8)
+foreach ($pair in @(@('content: "Space" !important;', 'content: "OEmt" !important;'), @('content: "Theme" !important;', 'content: ".club" !important;'),
+                    @('color: rgb(135, 140, 255);', 'color: rgb(var(--st-accent-2));'), @('color: rgb(102, 108, 255);', 'color: rgb(var(--st-accent-1));'))) {
+    if (-not $tb.Contains($pair[0])) { throw "titlebar.css: not found: $($pair[0])" }
+    $tb = $tb.Replace($pair[0], $pair[1])
+}
+[IO.File]::WriteAllText($tbPath, $tb, $utf8)
+
 $doc = $skin | ConvertFrom-Json
 if ($doc.name -ne 'OEmt.club' -or $doc.github -or $doc.Conditions.Font.default -ne 'Lucida Console (OEmt)') { throw 'skin.json edit check failed' }
 [IO.File]::WriteAllText($skinPath, $skin, $utf8)
@@ -47,7 +59,8 @@ OEmt.club Steam theme
 =====================
 Layout, components and options: SpaceTheme for Steam by SpaceEnergy / SpaceTheme
 (https://github.com/SpaceTheme/Steam), MIT License, see LICENSE in this folder.
-OEmt changes: src/css/root.css (palette), options/fonts/lucidaConsole.css (default font), skin.json metadata.
+OEmt changes: src/css/root.css (named, editable colors; SpaceTheme defaults), src/icons/logo.svg,
+title-bar text logo (src/css/steam/titlebar.css), options/fonts/lucidaConsole.css (default font), skin.json metadata.
 "@
 [IO.File]::WriteAllText((Join-Path $Out 'NOTICE-OEmt.txt'), $notice, $utf8)
 Write-Host "OEmt.club theme written to $Out"

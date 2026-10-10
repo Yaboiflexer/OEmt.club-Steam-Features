@@ -1,21 +1,87 @@
-/* OEmt.club palette for the OEmt.club Steam theme (layout by SpaceTheme, MIT).
-   Same variables SpaceTheme uses, so every SpaceTheme option keeps working. Values are "r, g, b". */
+/* OEmt.club theme colors. Defaults are SpaceTheme's. Each variable below appears as a named
+   color picker in the theme's settings. The comment block must sit directly above its variable,
+   with @name and @description on separate " * " lines (the parser reads each up to the next "*").
+   Values are "r, g, b". */
 :root {
-    --st-accent-1: 87, 121, 153;   /* OEmt accent #577999 */
-    --st-accent-2: 112, 148, 182;
-    --st-color-1: 22, 24, 28;      /* #16181c canvas */
-    --st-color-2: 30, 33, 39;      /* #1e2127 panels */
-    --st-color-3: 26, 28, 33;
-    --st-color-4: 28, 31, 36;
-    --st-color-5: 38, 42, 50;      /* #262a32 raised */
-    --st-color-6: 44, 48, 56;
-    --st-background: 16, 17, 20;
-    --st-red: 224, 100, 100;
-    --st-red-hover: 232, 122, 122;
-    --st-green: 95, 191, 127;
-    --st-green-hover: 115, 204, 145;
+    /*
+     * @name Accent
+     * @description Main highlight: active tabs, buttons, selected game
+     */
+    --st-accent-1: 102, 108, 255;
+    /*
+     * @name Accent (light)
+     * @description Hover and secondary highlight
+     */
+    --st-accent-2: 135, 140, 255;
+    /*
+     * @name Panels
+     * @description Main panel background
+     */
+    --st-color-1: 17, 17, 17;
+    /*
+     * @name Panels (raised)
+     * @description Cards, inputs and raised surfaces
+     */
+    --st-color-2: 30, 30, 30;
+    /*
+     * @name Panels (dark)
+     * @description Sidebar and darker panel areas
+     */
+    --st-color-3: 20, 20, 20;
+    /*
+     * @name Panels (mid)
+     * @description In-between panel shade
+     */
+    --st-color-4: 24, 24, 24;
+    /*
+     * @name Borders
+     * @description Borders and separators
+     */
+    --st-color-5: 38, 41, 44;
+    /*
+     * @name Hover
+     * @description Hovered rows and buttons
+     */
+    --st-color-6: 38, 38, 41;
+    /*
+     * @name Background
+     * @description Window background behind the panels
+     */
+    --st-background: 10, 10, 10;
+    /*
+     * @name Red
+     * @description Errors, stop and destructive buttons
+     */
+    --st-red: 240, 74, 74;
+    /*
+     * @name Red (hover)
+     */
+    --st-red-hover: 242, 99, 99;
+    /*
+     * @name Green
+     * @description Play button, online and success
+     */
+    --st-green: 36, 166, 90;
+    /*
+     * @name Green (hover)
+     */
+    --st-green-hover: 39, 185, 100;
+    /*
+     * @name Blue
+     * @description Links, downloads and info
+     */
     --st-blue: 75, 137, 239;
+    /*
+     * @name Blue (hover)
+     */
     --st-blue-hover: 100, 154, 242;
-    --st-yellow: 224, 176, 79;
-    --st-yellow-hover: 232, 190, 104;
+    /*
+     * @name Yellow
+     * @description Warnings and updates
+     */
+    --st-yellow: 239, 141, 75;
+    /*
+     * @name Yellow (hover)
+     */
+    --st-yellow-hover: 239, 141, 75;
 }
