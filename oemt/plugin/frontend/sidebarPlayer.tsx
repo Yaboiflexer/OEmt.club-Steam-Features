@@ -14,6 +14,7 @@ const POLL_MS = 1500;
 const CSS = `
 #${HOST_ID} { display: flex; flex-direction: column; gap: 6px; padding: 8px; border-radius: var(--st-border-radius, 6px);
   background: rgb(var(--st-color-1, 20, 24, 33)); color: #e8eaf0; font-size: 12px; min-width: 0; }
+#${HOST_ID}:empty { display: none; }
 #${HOST_ID} .op-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
 #${HOST_ID} .op-art { width: 40px; height: 40px; border-radius: 4px; object-fit: cover; flex: none; background: rgb(var(--st-color-2, 27, 32, 43)); display: flex; align-items: center; justify-content: center; color: #9aa4b2; }
 #${HOST_ID} .op-text { display: flex; flex-direction: column; min-width: 0; flex: 1; }
@@ -90,7 +91,8 @@ const Player: FC<{ doc: Document }> = ({ doc }) => {
 		api.playerCover(cover?.key ?? '').then((c) => setCover({ key: c.key ?? p.thumb_key, url: c.data_url ?? undefined }), () => undefined);
 	}, [p?.thumb_key, p?.has_thumb]); // eslint-disable-line react-hooks/exhaustive-deps
 
-	if (!enabled) return null;
+	// Nothing playing: render nothing, so the host collapses (:empty) and the games list gets the room back.
+	if (!enabled || !p?.title) return null;
 
 	const send = (a: PlayerCommand, value = 0) => api.playerCommand(a, value).then((r) => r.volume && setVol(r.volume), () => undefined);
 	const playing = p?.state === 'playing';
@@ -120,8 +122,7 @@ const Player: FC<{ doc: Document }> = ({ doc }) => {
 
 	return (
 		<>
-			{p && p.title ? (
-				<>
+			<>
 					<div className="op-row">
 						{cover?.key === p.thumb_key && cover.url ? <img className="op-art" src={cover.url} alt="" /> : <span className="op-art" aria-hidden="true">♪</span>}
 						<div className="op-text">
@@ -138,9 +139,6 @@ const Player: FC<{ doc: Document }> = ({ doc }) => {
 						<span className="op-time">{dur ? fmt(dur) : '--:--'}</span>
 					</div>
 				</>
-			) : (
-				<div className="op-row"><span className="op-sub">Nothing playing</span></div>
-			)}
 			<div className="op-row">
 				<button className="op-btn" disabled={!p?.can.previous} onClick={() => send('previous')} aria-label="Previous" title="Previous"><Icon d={P.previous} /></button>
 				<button className="op-btn op-main" disabled={!p?.can.play_pause} onClick={toggle} aria-label={playing ? 'Pause' : 'Play'} title={playing ? 'Pause' : 'Play'}>

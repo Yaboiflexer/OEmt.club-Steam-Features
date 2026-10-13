@@ -9,6 +9,16 @@ M.TEST_SECONDS = 15
 M.INVITE = { label = "Join OEmt.club", url = "https://discord.gg/OEmt" }
 -- The OEmt.club Discord application (public ID, not a secret). Used unless the user sets their own.
 M.APP_ID = "1558580525478846607"
+-- Small corner icon on the status: the OEmt.club logo, served from the public GitHub repo.
+M.LOGO_URL = "https://raw.githubusercontent.com/Yaboiflexer/OEmt/main/oemt/theme/overlay/src/icons/logo-512.png"
+
+--- The game's header image from Steam's public CDN; only for real Steam app IDs (non-Steam
+--- shortcuts get huge generated IDs with no store art).
+function M.game_art(appid)
+    appid = tostring(appid or "")
+    if not appid:match("^%d+$") or #appid > 8 then return nil end
+    return "https://cdn.cloudflare.steamstatic.com/steam/apps/" .. appid .. "/header.jpg"
+end
 
 --- deps: { config, win32, sessions, clock, log }
 function M.new(deps)
@@ -49,10 +59,14 @@ function M:presence()
     local buttons = self:opt("invite_button") ~= false and { M.INVITE } or nil
     local game = self:current_game()
     if game then
-        return { details = game.name or ("App " .. tostring(game.appid)), state = "via OEmt.club", start = game.started_at, buttons = buttons }
+        local name = game.name or ("App " .. tostring(game.appid))
+        local art = M.game_art(game.appid)
+        return { details = name, state = "via OEmt.club", start = game.started_at, buttons = buttons,
+                 large_image = art or M.LOGO_URL, large_text = art and name or "OEmt.club",
+                 small_image = art and M.LOGO_URL or nil, small_text = art and "OEmt.club" or nil }
     end
     if self:opt("idle_presence") == true then
-        return { details = "In Steam", state = "OEmt.club", buttons = buttons }
+        return { details = "In Steam", state = "OEmt.club", buttons = buttons, large_image = M.LOGO_URL, large_text = "OEmt.club" }
     end
     return nil
 end

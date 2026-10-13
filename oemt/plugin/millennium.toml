@@ -1,7 +1,7 @@
 [plugin]
 id = "club.oemt.core"
 name = "OEmt.club"
-version = "0.1.0"
+version = "0.1.1"
 author = "OEmt.club"
 description = "OEmt gaming environment: library, sessions, integrations and diagnostics inside Steam"
 

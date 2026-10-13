@@ -58,6 +58,13 @@ function M.activity(presence)
     local a = { details = field(presence.details), state = field(presence.state) }
     if not a.details and not a.state then return nil end
     if presence.start then a.timestamps = { start = math.floor(presence.start) } end
+    -- Images by https URL (Discord fetches them through its media proxy); hover text 2-128 chars.
+    local function img(url) return type(url) == "string" and url:match("^https://") and #url <= 256 and url or nil end
+    local assets = {
+        large_image = img(presence.large_image), large_text = presence.large_image and field(presence.large_text) or nil,
+        small_image = img(presence.small_image), small_text = presence.small_image and field(presence.small_text) or nil,
+    }
+    if assets.large_image or assets.small_image then a.assets = assets end
     -- Up to 2 link buttons (label 1-32 chars, https URL) that other people can click on the status.
     if type(presence.buttons) == "table" then
         local b = {}

@@ -18,7 +18,7 @@ local IpLog        = require("modules.ip_log")
 
 local M = {}
 
-M.VERSION = "0.1.0"
+M.VERSION = "0.1.1"
 
 --- services: {
 ---   millennium_version, cmp_version?, steam_path, data_dir, config_store, mirror_logger?,
