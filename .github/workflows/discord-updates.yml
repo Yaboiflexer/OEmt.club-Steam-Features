@@ -1,0 +1,62 @@
+name: Discord game updates
+
+# Posts new official Steam patch notes (CS2, Hood Warfare 2, Rust) through the OEmt.club Update bot.
+# Scheduled runs only fire from the default branch, and GitHub may start them a few minutes late.
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: discord-updates
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    defaults:
+      run:
+        working-directory: discord-bot
+
+    steps:
+      - name: Checkout bot
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: discord-bot
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: discord-bot/package-lock.json
+
+      # state.json holds the newest post date seen per game. Cache entries are immutable,
+      # so each run saves under a new key and the next run restores the most recent one.
+      - name: Restore last-seen posts
+        uses: actions/cache/restore@v4
+        with:
+          path: discord-bot/state.json
+          key: discord-updates-state-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: discord-updates-state-
+
+      - name: Install
+        run: npm ci --no-audit --no-fund
+
+      - name: Check Steam and post
+        run: npm run once
+        env:
+          DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+          CHANNEL_ID: ${{ secrets.DISCORD_CHANNEL_ID }}
+          PING_ROLE_ID: ${{ secrets.DISCORD_PING_ROLE_ID }}
+
+      - name: Save last-seen posts
+        if: always() && hashFiles('discord-bot/state.json') != ''
+        uses: actions/cache/save@v4
+        with:
+          path: discord-bot/state.json
+          key: discord-updates-state-${{ github.run_id }}-${{ github.run_attempt }}
