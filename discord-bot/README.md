@@ -6,6 +6,8 @@ Each post shows the game's **Last Record Update**, its **changelist** (linked to
 
 A game seen for the first time (first run, or just added) gets one status card with its current changelist and build. After that, only changes post.
 
+**Auto clean:** each check keeps only the newest card per tracked game, the command guide, the timer and command replies still waiting to expire. Older cards, cards of removed games, old posts and chat are deleted (needs **Manage Messages**). People's messages are only deleted after the bot has read them as possible commands.
+
 The bottom of the channel always has two bot messages: a guide to the `!` commands, then a "Next update check in X minutes" timer that counts down live in Discord. The bot edits them every check and moves them to the bottom only when that check posted something.
 
 ## Managing games from Discord

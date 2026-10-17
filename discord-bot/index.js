@@ -108,7 +108,8 @@ async function checkRecords(rest, state) {
 		const before = state.records[game.appid];
 		if (before?.changenumber === record.changenumber) continue;
 		try {
-			await post(rest, buildRecordEmbed(game, record, before));
+			const sent = await post(rest, buildRecordEmbed(game, record, before));
+			(state.cards ??= {})[game.appid] = sent.id;
 		} catch (e) {
 			console.error(`[${game.name}] could not post record update: ${e.message}`);
 			process.exitCode = 1; // --once runs show as failed (bad token, missing channel access)
@@ -172,6 +173,55 @@ async function updateFooter(rest, state, postedBelow) {
 
 // Discord snowflake for a moment in time, so "messages after X" can start from a timestamp.
 const snowflakeAt = (ms) => String((BigInt(ms) - 1420070400000n) << 22n);
+const snowflakeTime = (id) => Number((BigInt(id) >> 22n) + 1420070400000n);
+
+// Auto clean: the channel keeps only the newest card per tracked game, the command guide, the timer
+// and command replies still waiting to expire. Older cards, cards of removed games, old posts and chat
+// are deleted. People's messages are only deleted once handleCommands has read them (id <= lastCommandId).
+async function cleanChannel(rest, state) {
+	let me;
+	const messages = [];
+	try {
+		me = (await rest.get(Routes.user())).id;
+		let before;
+		for (let page = 0; page < 10; page++) {
+			const query = new URLSearchParams({ limit: '100', ...(before && { before }) });
+			const batch = await rest.get(Routes.channelMessages(CHANNEL_ID), { query });
+			messages.push(...batch);
+			if (batch.length < 100) break;
+			before = batch.at(-1).id;
+		}
+	} catch (e) {
+		console.error(`Auto clean skipped: ${e.message}`);
+		return;
+	}
+
+	// Cards posted before this cleanup existed: adopt the newest one per game (messages are newest first).
+	const list = games.load();
+	const cards = (state.cards ??= {});
+	for (const appid of Object.keys(cards)) if (!list.some((g) => String(g.appid) === appid)) delete cards[appid];
+	for (const game of list) {
+		if (cards[game.appid] && messages.some((m) => m.id === cards[game.appid])) continue;
+		const newest = messages.find((m) => m.author.id === me && m.embeds?.[0]?.author?.url === `https://steamdb.info/app/${game.appid}/`);
+		if (newest) cards[game.appid] = newest.id;
+	}
+
+	const keep = new Set([...Object.values(cards), state.helpMessageId, state.statusMessageId, ...(state.tempMessages ?? []).map((m) => m.id)]);
+	const seen = BigInt(state.lastCommandId ?? 0);
+	const doomed = messages.filter((m) => !keep.has(m.id) && (m.author.id === me || BigInt(m.id) <= seen));
+	if (!doomed.length) return;
+
+	// Bulk delete takes 2-100 messages younger than 14 days; anything else goes one at a time.
+	const fresh = doomed.filter((m) => Date.now() - snowflakeTime(m.id) < 13.9 * 24 * 3600_000).map((m) => m.id);
+	const single = doomed.map((m) => m.id).filter((id) => !fresh.includes(id));
+	for (let i = 0; i < fresh.length; i += 100) {
+		const chunk = fresh.slice(i, i + 100);
+		if (chunk.length === 1) single.push(chunk[0]);
+		else await rest.post(Routes.channelBulkDelete(CHANNEL_ID), { body: { messages: chunk } }).catch((e) => console.error(`Bulk delete failed: ${e.message}`));
+	}
+	for (const id of single) await rest.delete(Routes.channelMessage(CHANNEL_ID, id)).catch(() => {});
+	console.log(`Auto clean removed ${doomed.length} message${doomed.length === 1 ? '' : 's'}`);
+}
 
 async function runCommand(text, state) {
 	const [, name, arg = ''] = text.trim().match(/^!(\w+)\s*([\s\S]*)$/) ?? [];
@@ -255,6 +305,7 @@ async function checkAll(rest) {
 	const replies = await handleCommands(rest, state);
 	const cards = await checkRecords(rest, state);
 	await updateFooter(rest, state, cards > 0 || (replies > 0 && COMMANDS_CHANNEL_ID === CHANNEL_ID));
+	await cleanChannel(rest, state);
 	saveState(state);
 }
 
