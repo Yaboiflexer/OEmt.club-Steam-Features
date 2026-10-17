@@ -8,7 +8,11 @@ const { Client, GatewayIntentBits, EmbedBuilder, REST, Routes, Events, ActivityT
 
 try { process.loadEnvFile(path.join(__dirname, '.env')); } catch { /* no .env: rely on real environment variables */ }
 
-const { DISCORD_TOKEN, CHANNEL_ID, PING_ROLE_ID } = process.env;
+// Pasted secrets often carry a trailing newline, quotes or a "Bot " prefix; any of those breaks the auth header.
+const clean = (v) => (v ?? '').trim().replace(/^["']|["']$/g, '').trim();
+const DISCORD_TOKEN = clean(process.env.DISCORD_TOKEN).replace(/^Bot\s+/i, '');
+const CHANNEL_ID = clean(process.env.CHANNEL_ID);
+const PING_ROLE_ID = clean(process.env.PING_ROLE_ID);
 const POLL_MINUTES = Number(process.env.POLL_MINUTES) || 10;
 const GAMES = require('./games.json');
 const STATE_FILE = path.join(__dirname, 'state.json');
