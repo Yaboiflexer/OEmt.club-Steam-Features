@@ -1,7 +1,9 @@
-// OEmt.club Update: posts official Steam announcements for the games in games.json to one Discord channel.
-//   node index.js         stay online, poll Steam every POLL_MINUTES, serve /updates
+// OEmt.club Update: SteamDB-style record updates for the games in games.json, posted to one Discord channel.
+// Each post shows a game's Last Record Update, changelist, public build and the fields that changed,
+// read straight from Steam (SteamDB does not allow scraping) with links to the matching SteamDB pages.
+//   node index.js         stay online, check every POLL_MINUTES, serve /updates
 //   node index.js --once  one check then exit (for a scheduler such as Task Scheduler or GitHub Actions)
-//   node index.js --dry   print the latest post per game, no Discord token needed
+//   node index.js --dry   print each game's current record, no Discord token needed
 // Each check also runs !addgame / !removegame / !games typed in the commands channel since the last check.
 const fs = require('node:fs');
 const path = require('node:path');
@@ -18,6 +20,7 @@ const PING_ROLE_ID = clean(process.env.PING_ROLE_ID);
 const COMMANDS_CHANNEL_ID = clean(process.env.COMMANDS_CHANNEL_ID) || CHANNEL_ID;
 const POLL_MINUTES = Number(process.env.POLL_MINUTES) || 10;
 const games = require('./games');
+const { fetchRecords, diffRecords } = require('./steam-records');
 const STATE_FILE = path.join(__dirname, 'state.json');
 const DRY = process.argv.includes('--dry');
 const ONCE = process.argv.includes('--once');
@@ -25,83 +28,93 @@ const ONCE = process.argv.includes('--once');
 const loadState = () => { try { return JSON.parse(fs.readFileSync(STATE_FILE, 'utf8')); } catch { return {}; } };
 const saveState = (state) => fs.writeFileSync(STATE_FILE, JSON.stringify(state, null, 2));
 
-// Only the developer's own announcements (patch notes), not press articles Steam also aggregates.
-async function fetchNews(game, count = 5) {
-	const url = `https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=${game.appid}&count=${count}&maxlength=0&feeds=steam_community_announcements`;
-	const res = await fetch(url);
-	if (!res.ok) throw new Error(`Steam news for ${game.name}: HTTP ${res.status}`);
-	const data = await res.json();
-	return data.appnews?.newsitems ?? [];
-}
-
-// Store header art lives under a hashed path that changes with each art update, so ask the store for it.
-const headers = new Map();
-async function headerImage(game) {
-	if (!headers.has(game.appid)) {
-		try {
-			const res = await fetch(`https://store.steampowered.com/api/appdetails?appids=${game.appid}&filters=basic`);
-			headers.set(game.appid, (await res.json())[game.appid]?.data?.header_image ?? null);
-		} catch {
-			return null;
-		}
-	}
-	return headers.get(game.appid);
-}
-
-const CLAN_IMAGE = 'https://clan.akamai.steamstatic.com/images';
-
-function firstImage(raw) {
-	const m = raw.match(/\[img src="([^"]+)"/i) || raw.match(/\[img\]([\s\S]*?)\[\/img\]/i) || raw.match(/<img[^>]+src="([^"]+)"/i);
-	return m ? m[1].replace('{STEAM_CLAN_IMAGE}', CLAN_IMAGE) : null;
-}
-
-// Steam posts are BBCode (sometimes HTML); turn them into Discord markdown.
-function toMarkdown(raw) {
-	return raw
-		.replace(/\[img[^\]]*\][\s\S]*?\[\/img\]|\[img[^\]]*\]/gi, '')
-		.replace(/\[(previewyoutube|video)[^\]]*\][\s\S]*?\[\/\1\]/gi, '')
-		.replace(/\[url=["']?([^\]"']+)["']?\]([\s\S]*?)\[\/url\]/gi, '[$2]($1)')
-		.replace(/\[h[1-6]\]([\s\S]*?)\[\/h[1-6]\]/gi, '\n**$1**\n')
-		.replace(/\[\/?(b|strong)\]/gi, '**')
-		.replace(/\[\/?(i|em)\]/gi, '*')
-		.replace(/\[\*\]/g, '• ')
-		.replace(/\[\/\*\]/g, '')
-		.replace(/\[\/(p|list|olist)\]/gi, '\n')
-		.replace(/\[\/?[a-z0-9]+(=[^\]]*)?\]/gi, '')
-		.replace(/<br\s*\/?>|<\/p>|<\/li>/gi, '\n')
-		.replace(/<li>/gi, '• ')
-		.replace(/<[^>]+>/g, '')
-		.replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&')
-		.replace(/\\([[\]])/g, '$1')
-		.replace(/\*{4,}/g, '**')
-		.replace(/[ \t]+\n/g, '\n')
-		.replace(/\n\n(?=• )/g, '\n')
-		.replace(/\n{3,}/g, '\n\n')
-		.trim();
-}
-
 const clip = (s, n) => (s.length > n ? s.slice(0, n - 1).trimEnd() + '…' : s);
+const short = (v) => clip(String(v).replace(/\s+/g, ' '), 70);
+const unix = () => Math.floor(Date.now() / 1000);
 
-async function buildEmbed(game, item) {
-	const link = `https://store.steampowered.com/news/app/${game.appid}/view/${item.gid}`;
-	const body = clip(toMarkdown(item.contents), 1500);
+const BUILD_KEY = 'depots/branches/public/buildid';
+const BUILD_TIME_KEY = 'depots/branches/public/timeupdated';
+
+// SteamDB-style card: when the record changed, its changelist, the public build, and what changed.
+// Without `before` it is a status card for a game seen for the first time.
+function buildRecordEmbed(game, record, before) {
+	const history = `https://steamdb.info/app/${game.appid}/history/?changeid=${record.changenumber}`;
+	const build = record.values[BUILD_KEY];
+	const builtAt = record.values[BUILD_TIME_KEY];
+	const lines = [];
+	if (before) lines.push(`**Last Record Update:** <t:${unix()}:f> (<t:${unix()}:R>)`);
+	lines.push(`**Changelist:** [#${record.changenumber}](${history})`);
+	if (before && before.values[BUILD_KEY] !== build) lines.push(`**Public build:** \`${before.values[BUILD_KEY] ?? 'none'}\` → \`${build}\`${builtAt ? `, pushed <t:${builtAt}:R>` : ''}`);
+	else if (build) lines.push(`**Public build:** \`${build}\`${builtAt ? `, updated <t:${builtAt}:f>` : ''}`);
+
+	if (before) {
+		const changes = diffRecords(before.values, record.values);
+		const rows = [];
+		for (const c of changes) {
+			if ('from' in c) rows.push(`- ${c.key}: ${short(c.from)}`);
+			if ('to' in c) rows.push(`+ ${c.key}: ${short(c.to)}`);
+		}
+		let block = '';
+		let shown = 0;
+		for (const row of rows) {
+			if (block.length + row.length > 3200) break;
+			block += `${row}\n`;
+			shown++;
+		}
+		if (shown < rows.length) block += `… ${rows.length - shown} more lines on SteamDB\n`;
+		lines.push(changes.length ? `**Changes (${changes.length}):**\n\`\`\`diff\n${block}\`\`\`` : 'No field changes in the public record (Steam bumped the changelist only).');
+	} else {
+		lines.push('Now tracking this record. Every change from here gets its own post.');
+	}
+
 	return new EmbedBuilder()
 		.setColor(game.color ?? games.DEFAULT_COLOR)
-		.setAuthor({ name: game.name, url: `https://store.steampowered.com/app/${game.appid}` })
-		.setTitle(clip(item.title, 256))
-		.setURL(link)
-		.setDescription(`${body}\n\n[Read the full post on Steam](${link})`)
-		.setImage(firstImage(item.contents) ?? (await headerImage(game)))
-		.setTimestamp(item.date * 1000)
-		.setFooter({ text: 'OEmt.club Update' });
+		.setAuthor({ name: game.name, url: `https://steamdb.info/app/${game.appid}/` })
+		.setTitle(before ? 'Steam record updated' : 'Steam record')
+		.setURL(history)
+		.setDescription(lines.join('\n'))
+		.setTimestamp()
+		.setFooter({ text: 'OEmt.club Update · Steam app info' });
 }
 
-async function buildMessage(game, item) {
-	return {
+const post = (rest, embed) => rest.post(Routes.channelMessages(CHANNEL_ID), {
+	body: {
 		content: PING_ROLE_ID ? `<@&${PING_ROLE_ID}>` : undefined,
-		embeds: [(await buildEmbed(game, item)).toJSON()],
+		embeds: [embed.toJSON()],
 		allowed_mentions: { roles: PING_ROLE_ID ? [PING_ROLE_ID] : [] },
-	};
+	},
+});
+
+// Compares each game's Steam record with the one saved last check and posts when the changelist moved.
+// A game with no saved record (first run, or just added) gets a status card instead of a diff.
+async function checkRecords(rest, state) {
+	const list = games.load();
+	let records;
+	try {
+		records = await fetchRecords(list.map((g) => g.appid));
+	} catch (e) {
+		console.log(`::warning::Steam records not checked: ${e.message}`);
+		return;
+	}
+	state.records ??= {};
+	for (const game of list) {
+		const record = records[game.appid];
+		if (!record) {
+			console.log(`[${game.name}] Steam returned no public record`);
+			continue;
+		}
+		const before = state.records[game.appid];
+		if (before?.changenumber === record.changenumber) continue;
+		try {
+			await post(rest, buildRecordEmbed(game, record, before));
+		} catch (e) {
+			console.error(`[${game.name}] could not post record update: ${e.message}`);
+			process.exitCode = 1; // --once runs show as failed (bad token, missing channel access)
+			continue;
+		}
+		state.records[game.appid] = record;
+		console.log(`[${game.name}] record ${before ? `${before.changenumber} -> ` : ''}${record.changenumber}`);
+	}
 }
 
 // Discord snowflake for a moment in time, so "messages after X" can start from a timestamp.
@@ -113,10 +126,9 @@ async function runCommand(text, state) {
 		case 'addgame': {
 			if (!arg) return 'Usage: `!addgame <game name | Steam app ID | store link>`';
 			try {
-				const { status, app, announced } = await games.addGame(arg);
+				const { status, app } = await games.addGame(arg);
 				if (status === 'exists') return `**${app.name}** is already tracked.`;
-				const lines = [`Added **${app.name}** (\`${app.appid}\`). Its latest update posts in <#${CHANNEL_ID}> now.`];
-				if (!announced) lines.push(`It has no official Steam announcements yet, so nothing posts until it does.`);
+				const lines = [`Added **${app.name}** (\`${app.appid}\`). Its Steam record posts in <#${CHANNEL_ID}> now.`];
 				if (app.others.length) lines.push(`Wrong game? \`!removegame ${app.appid}\`, then \`!addgame <app ID>\` with one of: ${app.others.map((o) => `${o.name} (\`${o.appid}\`)`).join(', ')}`);
 				return lines.join('\n');
 			} catch (e) {
@@ -127,12 +139,12 @@ async function runCommand(text, state) {
 			if (!arg) return 'Usage: `!removegame <game name | Steam app ID>`';
 			const { status, game } = games.removeGame(arg);
 			if (status !== 'removed') return `No tracked game matches "${arg}". \`!games\` lists them.`;
-			delete state[game.appid]; // re-adding it later posts its latest update again
+			delete state.records?.[game.appid]; // re-adding it later starts with a fresh status card
 			return `Removed **${game.name}**.`;
 		}
 		case 'games': {
 			const list = games.load();
-			return `Tracking ${list.length} game${list.length === 1 ? '' : 's'}:\n${list.map((g) => `• ${g.name} (\`${g.appid}\`)`).join('\n')}\n\n\`!addgame <name>\` · \`!removegame <name>\``;
+			return `Tracking ${list.length} game${list.length === 1 ? '' : 's'}:\n${list.map((g) => `• [${g.name}](<https://steamdb.info/app/${g.appid}/>) (\`${g.appid}\`)`).join('\n')}\n\n\`!addgame <name>\` · \`!removegame <name>\``;
 		}
 		default:
 			return null;
@@ -163,49 +175,28 @@ async function handleCommands(rest, state) {
 	}
 }
 
-// State is the newest post date seen per game. A game with no state gets only its latest post,
-// so the first start (or a newly added game) shows the current patch without flooding the channel.
-async function checkAll(rest, send) {
+async function checkAll(rest) {
 	const state = loadState();
 	await handleCommands(rest, state);
-	for (const game of games.load()) {
-		let items;
-		try {
-			items = await fetchNews(game);
-		} catch (e) {
-			console.error(e.message);
-			continue;
-		}
-		if (!items.length) continue;
-		const seen = state[game.appid] ?? Math.max(...items.map((i) => i.date)) - 1;
-		const fresh = items.filter((i) => i.date > seen).sort((a, b) => a.date - b.date);
-		for (const item of fresh) {
-			try {
-				await send(game, item);
-			} catch (e) {
-				console.error(`[${game.name}] could not post "${item.title}": ${e.message}`);
-				process.exitCode = 1; // --once runs show as failed (bad token, missing channel access)
-				break;
-			}
-			state[game.appid] = item.date;
-			console.log(`[${game.name}] posted "${item.title}"`);
-		}
-	}
+	await checkRecords(rest, state);
 	saveState(state);
 }
 
 async function dryRun() {
-	for (const game of games.load()) {
-		const [item] = await fetchNews(game, 1);
-		if (!item) { console.log(`== ${game.name}: no posts`); continue; }
-		const embed = (await buildEmbed(game, item)).toJSON();
-		console.log(`== ${game.name} | ${embed.title}\n${embed.url}\nimage: ${embed.image?.url}\n${clip(embed.description, 400)}\n`);
+	const list = games.load();
+	const records = await fetchRecords(list.map((g) => g.appid));
+	for (const game of list) {
+		const r = records[game.appid];
+		if (!r) { console.log(`== ${game.name}: no public record`); continue; }
+		const built = r.values[BUILD_TIME_KEY] ? new Date(r.values[BUILD_TIME_KEY] * 1000).toISOString() : '?';
+		console.log(`== ${game.name} | changelist #${r.changenumber} | public build ${r.values[BUILD_KEY]} (${built}) | ${Object.keys(r.values).length} fields`);
+		console.log(`   https://steamdb.info/app/${game.appid}/history/?changeid=${r.changenumber}`);
 	}
 }
 
 const updatesCommand = new SlashCommandBuilder()
 	.setName('updates')
-	.setDescription('Show the latest official update for a game')
+	.setDescription("Show a game's current Steam record")
 	.addStringOption((o) => o
 		.setName('game')
 		.setDescription('Which game')
@@ -220,13 +211,15 @@ async function main() {
 	}
 
 	const rest = new REST().setToken(DISCORD_TOKEN);
-	const send = async (game, item) => rest.post(Routes.channelMessages(CHANNEL_ID), { body: await buildMessage(game, item) });
-	if (ONCE) return checkAll(rest, send);
+	if (ONCE) {
+		await checkAll(rest);
+		process.exit(); // the Steam connection can keep the event loop alive after logOff
+	}
 
 	const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
 	client.once(Events.ClientReady, async (c) => {
-		console.log(`Online as ${c.user.tag}, checking Steam every ${POLL_MINUTES} min`);
+		console.log(`Online as ${c.user.tag}, checking every ${POLL_MINUTES} min`);
 		c.user.setActivity(games.load().map((g) => g.name).join(' · '), { type: ActivityType.Watching });
 		await c.application.commands.set([updatesCommand.toJSON()]);
 
@@ -234,7 +227,7 @@ async function main() {
 		const tick = async () => {
 			if (busy) return;
 			busy = true;
-			try { await checkAll(rest, send); } finally { busy = false; }
+			try { await checkAll(rest); } finally { busy = false; }
 		};
 		await tick();
 		setInterval(tick, POLL_MINUTES * 60_000);
@@ -245,8 +238,8 @@ async function main() {
 		const game = games.load().find((g) => String(g.appid) === i.options.getString('game'));
 		await i.deferReply();
 		try {
-			const [item] = await fetchNews(game, 1);
-			await i.editReply(item ? { embeds: [await buildEmbed(game, item)] } : `No posts found for ${game.name}.`);
+			const record = (await fetchRecords([game.appid]))[game.appid];
+			await i.editReply(record ? { embeds: [buildRecordEmbed(game, record)] } : `Steam has no public record for ${game.name}.`);
 		} catch {
 			await i.editReply('Steam did not answer. Try again in a minute.');
 		}

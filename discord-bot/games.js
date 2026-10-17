@@ -36,18 +36,13 @@ async function findApp(query) {
 	return { name: hit.name, appid: hit.id, others };
 }
 
-async function hasAnnouncements(appid) {
-	const news = await getJson(`https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=${appid}&count=1&maxlength=1&feeds=steam_community_announcements`);
-	return Boolean(news.appnews?.newsitems?.length);
-}
-
 async function addGame(query, color = DEFAULT_COLOR) {
 	const games = load();
 	const app = await findApp(query.trim());
 	if (games.some((g) => g.appid === app.appid)) return { status: 'exists', app };
 	games.push({ name: app.name, appid: app.appid, color });
 	save(games);
-	return { status: 'added', app, announced: await hasAnnouncements(app.appid) };
+	return { status: 'added', app };
 }
 
 // Matches app ID, exact name, or a name fragment that fits exactly one tracked game.

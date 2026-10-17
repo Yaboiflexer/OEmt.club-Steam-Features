@@ -1,6 +1,6 @@
 name: Discord game updates
 
-# Posts new official Steam patch notes (CS2, Hood Warfare 2, Rust) through the OEmt.club Update bot.
+# Posts SteamDB-style Steam record updates for the games in discord-bot/games.json through the OEmt.club Update bot.
 # Scheduled runs only fire from the default branch, and GitHub may start them a few minutes late.
 on:
   schedule:

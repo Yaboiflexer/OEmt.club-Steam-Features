@@ -16,10 +16,9 @@ async function main() {
 	}
 	if (!/^#[0-9a-f]{6}$/i.test(color)) throw new Error(`--color must look like #RRGGBB, got "${color}"`);
 
-	const { status, app, announced } = await addGame(query, color);
+	const { status, app } = await addGame(query, color);
 	if (status === 'exists') return console.log(`${app.name} (${app.appid}) is already tracked.`);
-	console.log(`Added ${app.name} (${app.appid}). Its latest update posts on the next check.`);
-	if (!announced) console.log(`Note: ${app.name} has no official Steam announcements yet. Nothing posts until it has one.`);
+	console.log(`Added ${app.name} (${app.appid}). Its Steam record posts on the next check.`);
 	if (app.others.length) console.log(`Not the right game? Remove it and add by app ID: ${app.others.map((o) => `${o.name} (${o.appid})`).join(', ')}`);
 }
 

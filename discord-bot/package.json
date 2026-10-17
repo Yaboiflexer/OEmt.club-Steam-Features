@@ -2,7 +2,7 @@
   "name": "oemt-update-bot",
   "version": "0.1.0",
   "private": true,
-  "description": "OEmt.club Update: posts official Steam patch notes for CS2, Hood Warfare 2 and Rust to a Discord channel",
+  "description": "OEmt.club Update: posts SteamDB-style Steam record updates for tracked games to a Discord channel",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
@@ -15,6 +15,7 @@
     "node": ">=20.12"
   },
   "dependencies": {
-    "discord.js": "^14.16.3"
+    "discord.js": "^14.16.3",
+    "steam-user": "^5.3.0"
   }
 }
