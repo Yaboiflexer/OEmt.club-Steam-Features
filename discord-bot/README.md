@@ -16,7 +16,7 @@ Type these in the commands channel (the updates channel unless `DISCORD_COMMANDS
 | `!removegame <name or app ID>` | Stop tracking a game. Part of the name is enough if it matches one game. |
 | `!games` | List tracked games. |
 
-The bot reads commands on each check, so it replies within one check (about 10 minutes on GitHub Actions). Changes are committed to `games.json` automatically. Reading commands needs **Message Content Intent** on in the Developer Portal (Bot page).
+The bot reads commands on each check, so it acts within one check (about 10 minutes on GitHub Actions). It deletes the command message, posts a short reply, and deletes that reply on the following check, so the channel keeps only record posts. Deleting needs **Manage Messages** for the bot in that channel. Changes are committed to `games.json` automatically. Reading commands needs **Message Content Intent** on in the Developer Portal (Bot page).
 
 From a terminal, `npm run add-game -- "<name>"` does the same as `!addgame`.
 

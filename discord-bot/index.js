@@ -151,9 +151,20 @@ async function runCommand(text, state) {
 	}
 }
 
+// Bot replies to commands are temporary: each check deletes the ones left by earlier checks.
+async function clearOldReplies(rest, state) {
+	for (const { channel, id } of state.tempMessages ?? []) {
+		await rest.delete(Routes.channelMessage(channel, id)).catch(() => {}); // already gone is fine
+	}
+	state.tempMessages = [];
+}
+
 // Commands typed since the last check. The first check starts an hour back, so commands typed
 // before the bot ever ran still count. Needs the Message Content intent to read message text.
+// The command message is deleted (needs Manage Messages) and the reply is removed next check,
+// so the channel keeps only the record posts.
 async function handleCommands(rest, state) {
+	await clearOldReplies(rest, state);
 	const after = state.lastCommandId ?? snowflakeAt(Date.now() - 60 * 60_000);
 	let messages;
 	try {
@@ -169,9 +180,17 @@ async function handleCommands(rest, state) {
 		const reply = await runCommand(msg.content, state);
 		if (!reply) continue;
 		console.log(`[command] ${msg.author.username}: ${msg.content}`);
-		await rest.post(Routes.channelMessages(COMMANDS_CHANNEL_ID), {
-			body: { content: reply, message_reference: { message_id: msg.id, fail_if_not_exists: false }, allowed_mentions: { parse: [] } },
-		}).catch((e) => console.error(`Could not reply to command: ${e.message}`));
+		await rest.delete(Routes.channelMessage(COMMANDS_CHANNEL_ID, msg.id))
+			.catch((e) => console.error(`Could not delete command message (bot needs Manage Messages): ${e.message}`));
+		try {
+			// <@id> shows who asked without pinging them; the command it answers is already deleted.
+			const sent = await rest.post(Routes.channelMessages(COMMANDS_CHANNEL_ID), {
+				body: { content: `<@${msg.author.id}> ${reply}`, allowed_mentions: { parse: [] } },
+			});
+			state.tempMessages.push({ channel: COMMANDS_CHANNEL_ID, id: sent.id });
+		} catch (e) {
+			console.error(`Could not reply to command: ${e.message}`);
+		}
 	}
 }
 
