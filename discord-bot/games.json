@@ -1,5 +1,6 @@
 [
   { "name": "Counter-Strike 2", "appid": 730, "color": "#DE9B35" },
   { "name": "Hood Warfare 2", "appid": 5155360, "color": "#F1C40F" },
-  { "name": "Rust", "appid": 252490, "color": "#CD412B" }
+  { "name": "Rust", "appid": 252490, "color": "#CD412B" },
+  { "name": "Apex Legends™", "appid": 1172470, "color": "#5865F2" }
 ]
