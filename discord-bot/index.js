@@ -193,34 +193,49 @@ async function cleanChannel(rest, state) {
 		}
 	} catch (e) {
 		console.error(`Auto clean skipped: ${e.message}`);
-		return;
+		return 0;
 	}
 
 	// Cards posted before this cleanup existed: adopt the newest one per game (messages are newest first).
+	// A game whose card is gone (someone deleted it) gets its saved record reposted below.
 	const list = games.load();
 	const cards = (state.cards ??= {});
+	const missing = [];
 	for (const appid of Object.keys(cards)) if (!list.some((g) => String(g.appid) === appid)) delete cards[appid];
 	for (const game of list) {
 		if (cards[game.appid] && messages.some((m) => m.id === cards[game.appid])) continue;
 		const newest = messages.find((m) => m.author.id === me && m.embeds?.[0]?.author?.url === `https://steamdb.info/app/${game.appid}/`);
 		if (newest) cards[game.appid] = newest.id;
+		else if (state.records?.[game.appid]) missing.push(game);
 	}
 
 	const keep = new Set([...Object.values(cards), state.helpMessageId, state.statusMessageId, ...(state.tempMessages ?? []).map((m) => m.id)]);
 	const seen = BigInt(state.lastCommandId ?? 0);
 	const doomed = messages.filter((m) => !keep.has(m.id) && (m.author.id === me || BigInt(m.id) <= seen));
-	if (!doomed.length) return;
-
-	// Bulk delete takes 2-100 messages younger than 14 days; anything else goes one at a time.
-	const fresh = doomed.filter((m) => Date.now() - snowflakeTime(m.id) < 13.9 * 24 * 3600_000).map((m) => m.id);
-	const single = doomed.map((m) => m.id).filter((id) => !fresh.includes(id));
-	for (let i = 0; i < fresh.length; i += 100) {
-		const chunk = fresh.slice(i, i + 100);
-		if (chunk.length === 1) single.push(chunk[0]);
-		else await rest.post(Routes.channelBulkDelete(CHANNEL_ID), { body: { messages: chunk } }).catch((e) => console.error(`Bulk delete failed: ${e.message}`));
+	if (doomed.length) {
+		// Bulk delete takes 2-100 messages younger than 14 days; anything else goes one at a time.
+		const fresh = doomed.filter((m) => Date.now() - snowflakeTime(m.id) < 13.9 * 24 * 3600_000).map((m) => m.id);
+		const single = doomed.map((m) => m.id).filter((id) => !fresh.includes(id));
+		for (let i = 0; i < fresh.length; i += 100) {
+			const chunk = fresh.slice(i, i + 100);
+			if (chunk.length === 1) single.push(chunk[0]);
+			else await rest.post(Routes.channelBulkDelete(CHANNEL_ID), { body: { messages: chunk } }).catch((e) => console.error(`Bulk delete failed: ${e.message}`));
+		}
+		for (const id of single) await rest.delete(Routes.channelMessage(CHANNEL_ID, id)).catch(() => {});
+		console.log(`Auto clean removed ${doomed.length} message${doomed.length === 1 ? '' : 's'}`);
 	}
-	for (const id of single) await rest.delete(Routes.channelMessage(CHANNEL_ID, id)).catch(() => {});
-	console.log(`Auto clean removed ${doomed.length} message${doomed.length === 1 ? '' : 's'}`);
+
+	let reposted = 0;
+	for (const game of missing) {
+		try {
+			cards[game.appid] = (await post(rest, buildRecordEmbed(game, state.records[game.appid]))).id;
+			reposted++;
+			console.log(`[${game.name}] card was missing, reposted`);
+		} catch (e) {
+			console.error(`[${game.name}] could not repost missing card: ${e.message}`);
+		}
+	}
+	return reposted;
 }
 
 async function runCommand(text, state) {
@@ -304,8 +319,8 @@ async function checkAll(rest) {
 	const state = loadState();
 	const replies = await handleCommands(rest, state);
 	const cards = await checkRecords(rest, state);
-	await updateFooter(rest, state, cards > 0 || (replies > 0 && COMMANDS_CHANNEL_ID === CHANNEL_ID));
-	await cleanChannel(rest, state);
+	const reposted = await cleanChannel(rest, state);
+	await updateFooter(rest, state, cards > 0 || reposted > 0 || (replies > 0 && COMMANDS_CHANNEL_ID === CHANNEL_ID));
 	saveState(state);
 }
 
