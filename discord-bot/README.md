@@ -1,8 +1,20 @@
 # OEmt.club Update bot
 
-Posts official Steam patch notes for **Counter-Strike 2**, **Hood Warfare 2** and **Rust** to one Discord channel, and answers `/updates game:<name>` with the latest post.
+Posts official Steam patch notes for the games in `games.json` (Counter-Strike 2, Hood Warfare 2 and Rust to start) to one Discord channel. Games are added and removed from Discord.
 
-Games live in `games.json` (Steam app ID + embed color). Add a line there to track another Steam game.
+## Managing games from Discord
+
+Type these in the commands channel (the updates channel unless `DISCORD_COMMANDS_CHANNEL_ID` is set). Anyone who can type there can use them, so keep it staff-only.
+
+| Command | What it does |
+| --- | --- |
+| `!addgame <name, Steam app ID or store link>` | Track a Steam game. Its latest update posts right away. |
+| `!removegame <name or app ID>` | Stop tracking a game. Part of the name is enough if it matches one game. |
+| `!games` | List tracked games. |
+
+The bot reads commands on each check, so it replies within one check (about 10 minutes on GitHub Actions). Changes are committed to `games.json` automatically. Reading commands needs **Message Content Intent** on in the Developer Portal (Bot page).
+
+From a terminal, `npm run add-game -- "<name>"` does the same as `!addgame`.
 
 ## Setup
 
@@ -14,13 +26,15 @@ Games live in `games.json` (Steam app ID + embed color). Add a line there to tra
 
 The first start posts the current latest update for each game. From then on, only new posts are sent to the channel.
 
-## Commands
+## npm scripts
 
-| Command | What it does |
+| Script | What it does |
 | --- | --- |
 | `npm start` | Stay online, check Steam every `POLL_MINUTES`, serve `/updates` |
 | `npm run once` | Check once and exit (for Task Scheduler, cron or GitHub Actions) |
 | `npm run dry` | Print the latest post per game; needs no token |
+| `npm run add-game -- "<name>"` | Add a game to `games.json` |
+| `npm run stats` | How often GitHub actually ran the scheduled check |
 
 ## Hosting
 
@@ -28,7 +42,7 @@ Discord does not run bots. This process has to run somewhere: your PC (online on
 
 ### GitHub Actions (current setup)
 
-`.github/workflows/discord-updates.yml` runs `npm run once` every 10 minutes from `main` and keeps `state.json` in the Actions cache between runs. The bot shows offline and `/updates` does not answer in this mode; new patch notes are still posted.
+`.github/workflows/discord-updates.yml` runs `npm run once` every 10 minutes from `main`, keeps `state.json` in the Actions cache between runs, and commits `games.json` when Discord commands change it. The bot shows offline and `/updates` does not answer in this mode; patch notes and `!` commands still work.
 
 Add these under **Settings > Secrets and variables > Actions > New repository secret**:
 
@@ -37,5 +51,6 @@ Add these under **Settings > Secrets and variables > Actions > New repository se
 | `DISCORD_TOKEN` | Bot token from the Developer Portal |
 | `DISCORD_CHANNEL_ID` | ID of the channel to post in |
 | `DISCORD_PING_ROLE_ID` | Optional: role to ping on each update |
+| `DISCORD_COMMANDS_CHANNEL_ID` | Optional: separate staff channel for `!` commands |
 
 Run it once by hand from **Actions > Discord game updates > Run workflow**. That first run posts the current latest update for each game; later runs post only new ones.

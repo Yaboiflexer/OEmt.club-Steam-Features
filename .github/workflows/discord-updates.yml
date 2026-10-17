@@ -11,8 +11,9 @@ concurrency:
   group: discord-updates
   cancel-in-progress: false
 
+# write: !addgame / !removegame in Discord change discord-bot/games.json, which this run commits back.
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   post:
@@ -53,6 +54,18 @@ jobs:
           DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
           CHANNEL_ID: ${{ secrets.DISCORD_CHANNEL_ID }}
           PING_ROLE_ID: ${{ secrets.DISCORD_PING_ROLE_ID }}
+          COMMANDS_CHANNEL_ID: ${{ secrets.DISCORD_COMMANDS_CHANNEL_ID }}
+
+      # Pushes made with GITHUB_TOKEN do not start other workflows, so this cannot loop.
+      - name: Save games list changed from Discord
+        if: always()
+        run: |
+          git diff --quiet -- games.json && exit 0
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add games.json
+          git commit -m "Discord updates: games list changed from Discord"
+          git push
 
       - name: Save last-seen posts
         if: always() && hashFiles('discord-bot/state.json') != ''

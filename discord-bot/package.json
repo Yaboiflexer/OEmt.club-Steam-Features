@@ -7,7 +7,9 @@
   "scripts": {
     "start": "node index.js",
     "once": "node index.js --once",
-    "dry": "node index.js --dry"
+    "dry": "node index.js --dry",
+    "add-game": "node add-game.js",
+    "stats": "node schedule-stats.js"
   },
   "engines": {
     "node": ">=20.12"
