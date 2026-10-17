@@ -121,32 +121,52 @@ async function checkRecords(rest, state) {
 	return posted;
 }
 
-// One status message with a countdown to the next check. <t:…:R> counts down in every Discord client
-// by itself, so nothing has to run between checks. It is edited in place, and reposted at the bottom
-// only when this check posted something below it.
-async function updateStatus(rest, state, postedBelow) {
+const helpEmbed = () => new EmbedBuilder()
+	.setColor(games.DEFAULT_COLOR)
+	.setDescription([
+		'📋 **Bot commands** (staff)',
+		'`!addgame <name | Steam app ID | store link>` track a game',
+		'`!removegame <name | app ID>` stop tracking a game',
+		'`!games` list tracked games',
+		'*Commands run at the next check. Your message is removed and the reply clears itself.*',
+	].join('\n'));
+
+// <t:…:R> counts down in every Discord client by itself, so nothing has to run between checks.
+const timerEmbed = () => {
 	const now = unix();
 	const next = now + POLL_MINUTES * 60;
-	const embed = new EmbedBuilder()
+	return new EmbedBuilder()
 		.setColor(games.DEFAULT_COLOR)
 		.setDescription([
 			`⏱️ **Next update check** <t:${next}:R> · <t:${next}:t>`,
 			`Last check <t:${now}:R> · tracking ${games.load().map((g) => g.name).join(' · ')}`,
 			'*GitHub can start a check a few minutes late.*',
 		].join('\n'));
-	const body = { embeds: [embed.toJSON()] };
-	const id = state.statusMessageId;
-	if (id && !postedBelow) {
+};
+
+// The command guide and the countdown stay at the bottom of the channel, in that order. They are
+// edited in place, and reposted below everything only when this check posted something.
+async function updateFooter(rest, state, postedBelow) {
+	const footer = [
+		{ key: 'helpMessageId', body: { embeds: [helpEmbed().toJSON()] } },
+		{ key: 'statusMessageId', body: { embeds: [timerEmbed().toJSON()] } },
+	];
+	if (!postedBelow && footer.every((m) => state[m.key])) {
 		try {
-			await rest.patch(Routes.channelMessage(CHANNEL_ID, id), { body });
+			for (const m of footer) await rest.patch(Routes.channelMessage(CHANNEL_ID, state[m.key]), { body: m.body });
 			return;
-		} catch { /* someone deleted it: post a new one */ }
+		} catch { /* one was deleted: repost both so the order holds */ }
 	}
-	if (id) await rest.delete(Routes.channelMessage(CHANNEL_ID, id)).catch(() => {});
-	try {
-		state.statusMessageId = (await rest.post(Routes.channelMessages(CHANNEL_ID), { body })).id;
-	} catch (e) {
-		console.error(`Could not post status message: ${e.message}`);
+	for (const m of footer) {
+		if (state[m.key]) await rest.delete(Routes.channelMessage(CHANNEL_ID, state[m.key])).catch(() => {});
+		delete state[m.key];
+	}
+	for (const m of footer) {
+		try {
+			state[m.key] = (await rest.post(Routes.channelMessages(CHANNEL_ID), { body: m.body })).id;
+		} catch (e) {
+			console.error(`Could not post ${m.key.replace('MessageId', '')} message: ${e.message}`);
+		}
 	}
 }
 
@@ -234,7 +254,7 @@ async function checkAll(rest) {
 	const state = loadState();
 	const replies = await handleCommands(rest, state);
 	const cards = await checkRecords(rest, state);
-	await updateStatus(rest, state, cards > 0 || (replies > 0 && COMMANDS_CHANNEL_ID === CHANNEL_ID));
+	await updateFooter(rest, state, cards > 0 || (replies > 0 && COMMANDS_CHANNEL_ID === CHANNEL_ID));
 	saveState(state);
 }
 

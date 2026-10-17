@@ -6,7 +6,7 @@ Each post shows the game's **Last Record Update**, its **changelist** (linked to
 
 A game seen for the first time (first run, or just added) gets one status card with its current changelist and build. After that, only changes post.
 
-The channel also has one status message, "Next update check in X minutes", that counts down live in Discord. The bot edits it every check and moves it to the bottom only when that check posted something.
+The bottom of the channel always has two bot messages: a guide to the `!` commands, then a "Next update check in X minutes" timer that counts down live in Discord. The bot edits them every check and moves them to the bottom only when that check posted something.
 
 ## Managing games from Discord
 
