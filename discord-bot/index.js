@@ -87,6 +87,7 @@ const post = (rest, embed) => rest.post(Routes.channelMessages(CHANNEL_ID), {
 
 // Compares each game's Steam record with the one saved last check and posts when the changelist moved.
 // A game with no saved record (first run, or just added) gets a status card instead of a diff.
+// Returns how many cards were posted.
 async function checkRecords(rest, state) {
 	const list = games.load();
 	let records;
@@ -94,8 +95,9 @@ async function checkRecords(rest, state) {
 		records = await fetchRecords(list.map((g) => g.appid));
 	} catch (e) {
 		console.log(`::warning::Steam records not checked: ${e.message}`);
-		return;
+		return 0;
 	}
+	let posted = 0;
 	state.records ??= {};
 	for (const game of list) {
 		const record = records[game.appid];
@@ -113,7 +115,38 @@ async function checkRecords(rest, state) {
 			continue;
 		}
 		state.records[game.appid] = record;
+		posted++;
 		console.log(`[${game.name}] record ${before ? `${before.changenumber} -> ` : ''}${record.changenumber}`);
+	}
+	return posted;
+}
+
+// One status message with a countdown to the next check. <t:…:R> counts down in every Discord client
+// by itself, so nothing has to run between checks. It is edited in place, and reposted at the bottom
+// only when this check posted something below it.
+async function updateStatus(rest, state, postedBelow) {
+	const now = unix();
+	const next = now + POLL_MINUTES * 60;
+	const embed = new EmbedBuilder()
+		.setColor(games.DEFAULT_COLOR)
+		.setDescription([
+			`⏱️ **Next update check** <t:${next}:R> · <t:${next}:t>`,
+			`Last check <t:${now}:R> · tracking ${games.load().map((g) => g.name).join(' · ')}`,
+			'*GitHub can start a check a few minutes late.*',
+		].join('\n'));
+	const body = { embeds: [embed.toJSON()] };
+	const id = state.statusMessageId;
+	if (id && !postedBelow) {
+		try {
+			await rest.patch(Routes.channelMessage(CHANNEL_ID, id), { body });
+			return;
+		} catch { /* someone deleted it: post a new one */ }
+	}
+	if (id) await rest.delete(Routes.channelMessage(CHANNEL_ID, id)).catch(() => {});
+	try {
+		state.statusMessageId = (await rest.post(Routes.channelMessages(CHANNEL_ID), { body })).id;
+	} catch (e) {
+		console.error(`Could not post status message: ${e.message}`);
 	}
 }
 
@@ -162,7 +195,7 @@ async function clearOldReplies(rest, state) {
 // Commands typed since the last check. The first check starts an hour back, so commands typed
 // before the bot ever ran still count. Needs the Message Content intent to read message text.
 // The command message is deleted (needs Manage Messages) and the reply is removed next check,
-// so the channel keeps only the record posts.
+// so the channel keeps only the record posts. Returns how many replies were posted.
 async function handleCommands(rest, state) {
 	await clearOldReplies(rest, state);
 	const after = state.lastCommandId ?? snowflakeAt(Date.now() - 60 * 60_000);
@@ -171,10 +204,11 @@ async function handleCommands(rest, state) {
 		messages = await rest.get(Routes.channelMessages(COMMANDS_CHANNEL_ID), { query: new URLSearchParams({ after, limit: '50' }) });
 	} catch (e) {
 		console.error(`Could not read commands channel: ${e.message}`);
-		return;
+		return 0;
 	}
 	messages.sort((a, b) => (BigInt(a.id) < BigInt(b.id) ? -1 : 1));
 	state.lastCommandId = messages.at(-1)?.id ?? after;
+	let replies = 0;
 	for (const msg of messages) {
 		if (msg.author.bot || !msg.content?.startsWith('!')) continue;
 		const reply = await runCommand(msg.content, state);
@@ -188,16 +222,19 @@ async function handleCommands(rest, state) {
 				body: { content: `<@${msg.author.id}> ${reply}`, allowed_mentions: { parse: [] } },
 			});
 			state.tempMessages.push({ channel: COMMANDS_CHANNEL_ID, id: sent.id });
+			replies++;
 		} catch (e) {
 			console.error(`Could not reply to command: ${e.message}`);
 		}
 	}
+	return replies;
 }
 
 async function checkAll(rest) {
 	const state = loadState();
-	await handleCommands(rest, state);
-	await checkRecords(rest, state);
+	const replies = await handleCommands(rest, state);
+	const cards = await checkRecords(rest, state);
+	await updateStatus(rest, state, cards > 0 || (replies > 0 && COMMANDS_CHANNEL_ID === CHANNEL_ID));
 	saveState(state);
 }
 
